@@ -1,0 +1,2 @@
+flickr_api
+python-dotenv
