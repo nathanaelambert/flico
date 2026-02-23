@@ -2,3 +2,9 @@ flickr_api
 python-dotenv
 flickrapi
 pandas
+ipykernel
+jupyter
+networkx
+seaborn
+matplotlib
+numpy
