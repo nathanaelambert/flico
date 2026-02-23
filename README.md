@@ -28,6 +28,9 @@ python -m pip install pip-requirements.txt
 python API/basic_test.py
 ```
 
+## Notes for dev
+Infos about how to use the API can be found [here](https://github.com/alexis-mignon/python-flickr-api/blob/master/docs/api-reference.md)
+
 ## Notes for self
 
 taken and posted dates
