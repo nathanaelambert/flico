@@ -1,3 +1,4 @@
 flickr_api
 python-dotenv
 flickrapi
+pandas
