@@ -1,6 +1,12 @@
 # flico
 exploring Flickr Commons
 
+## Dev notes
+I am considering switching to the flickrapi library instead, I think it is more stable. I am getting a lot of error messages due to rate limiting.
+```
+201 : Sorry, the Flickr API service is not currently available.
+```
+
 ## Data
 Uses the Flickr Commons collection by access via its [API](https://www.flickr.com/services/api/) through Alexis Mignon's [python implementation](https://github.com/alexis-mignon/python-flickr-api)
 
@@ -30,15 +36,3 @@ python API/basic_test.py
 
 ## Notes for dev
 Infos about how to use the API can be found [here](https://github.com/alexis-mignon/python-flickr-api/blob/master/docs/api-reference.md)
-
-## Notes for self
-
-taken and posted dates
-
-description 
-
-tags
-
-people
-
-location
