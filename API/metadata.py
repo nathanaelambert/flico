@@ -186,10 +186,10 @@ def download_metadata(institutions):
             continue
         
         page = 1
-        max_pages = 100
+        max_pages = 10000
         new_photos_this_run = 0
         consecutive_empty_pages = 0
-        empty_page_threshold = 3
+        empty_page_threshold = 25
         
         while page <= max_pages and consecutive_empty_pages < empty_page_threshold:
             try:
@@ -234,7 +234,7 @@ def download_metadata(institutions):
                     print(f"  ⚠️ No new photos (duplicates)")
                 
                 page += 1
-                time.sleep(random.uniform(1.5, 2.5))
+                # time.sleep(random.uniform(1.5, 2.5))
                 
             except flickrapi.exceptions.FlickrError as e:
                 if '201:' in str(e):
