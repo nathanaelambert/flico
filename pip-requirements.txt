@@ -5,3 +5,4 @@ pandas
 ipykernel
 jupyter
 plotly
+numpy
