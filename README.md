@@ -61,7 +61,7 @@ extras="description,license,date_upload,date_taken,owner_name,geo,tags,machine_t
 | ------------- | --------------------- | ---------------------------------------------------------------- |
 | id            | ✅ Yes                 | Always in search results                                         |
 | secret        | ✅ Yes                 | Always included                                                  |
-| title         | ❌ No*                 | *Basic title sometimes in search, but full title needs getInfo() |
+| title         | ❌ No* (good enough)   | *Basic title sometimes in search, but full title needs getInfo() |
 | description   | ✅ Yes                 | photo.description._content                                       |
 | date_taken    | ✅ Yes                 | photo.datetaken                                                  |
 | date_uploaded | ✅ Yes                 | photo.dateupload (Unix timestamp)                                |
