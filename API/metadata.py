@@ -85,6 +85,8 @@ def extract_from_search(photo_dict):
         'tags': tags_str
     }
 
+# ----------------- ROUTINE 1: check local and remote ------------------- #
+
 def check_metadata_status():
     """Routine 1: Analyze all institutions and return prioritized list."""
     print("🔍 CHECKING METADATA STATUS...")
@@ -141,6 +143,8 @@ def check_metadata_status():
         print(f"{i:2d}. {item['name']:<50} {item['coverage']:>6.1%} ({item['csv_photos']}/{item['flickr_total']:,})")
     
     return prioritized
+
+# ----------------- ROUTINE 2: download  to local from remote ------------------- #
 
 def download_metadata(institutions):
     """Routine 2: Download metadata for prioritized institutions."""
