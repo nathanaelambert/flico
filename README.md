@@ -38,15 +38,15 @@ python API/basic_test.py
 
 # Dev logs
 
-## Feb 23 2026
 
 
-
+## Feb 24 2026
 
 [metadata script](API/metadata.py) script seems ok.
 
 I checked the [Royal Museums Greenwhich](https://www.flickr.com/photos/nationalmaritimemuseum/with/38608148550/) that has 0 photos obtainable via search with the API. It seems that their pictures are copyrighted so it makes sense. This means that copyrighted picture don't appear.
 
+## Feb 23 2026
 
 | Field         | Available via extras? | Notes                                                            |
 | ------------- | --------------------- | ---------------------------------------------------------------- |
