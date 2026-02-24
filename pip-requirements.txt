@@ -4,8 +4,4 @@ flickrapi
 pandas
 ipykernel
 jupyter
-networkx
-seaborn
-matplotlib
-numpy
 plotly
