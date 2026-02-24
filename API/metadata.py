@@ -6,6 +6,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import flickrapi
 
+
 # ----------------- SETUP ------------------- #
 load_dotenv()
 API_KEY = os.getenv('FLICKR_API_KEY')
@@ -13,13 +14,16 @@ API_SECRET = os.getenv('FLICKR_API_SECRET')
 if not API_KEY or not API_SECRET:
     raise ValueError("FLICKR_API_KEY and FLICKR_API_SECRET must be set in .env")
 
+
 flickr = flickrapi.FlickrAPI(API_KEY, API_SECRET, format='parsed-json')
 metadata_dir = Path("metadata")
 metadata_dir.mkdir(exist_ok=True)
 
+
 # ----------------- UTILS ------------------- #
 def safe_str(value):
     return str(value) if value is not None else ""
+
 
 def count_csv_rows(filename):
     if not filename.exists():
@@ -29,6 +33,7 @@ def count_csv_rows(filename):
             return sum(1 for _ in f) - 1  # -1 for header
     except:
         return 0
+
 
 def get_csv_photo_ids(filename):
     if not filename.exists():
@@ -44,11 +49,13 @@ def get_csv_photo_ids(filename):
     except:
         return set()
 
+
 def get_fieldnames():
     return [
         'id', 'secret', 'title', 'description', 'date_taken', 'date_uploaded',
         'latitude', 'longitude', 'comments', 'size', 'image_url', 'notes', 'tags'
     ]
+
 
 def extract_from_search(photo_dict):
     if not isinstance(photo_dict, dict):
@@ -61,13 +68,6 @@ def extract_from_search(photo_dict):
         if isinstance(value, dict):
             return safe_str(value.get('_content', value))
         return safe_str(value)
-    
-    tags_str = ''
-    raw_tags = photo_dict.get('tags')
-    if isinstance(raw_tags, dict):
-        tag_list = raw_tags.get('tag', [])
-        if isinstance(tag_list, list):
-            tags_str = ', '.join(safe_extract(t) for t in tag_list if isinstance(t, dict))
     
     return {
         'id': safe_str(photo_dict.get('id')),
@@ -82,10 +82,19 @@ def extract_from_search(photo_dict):
         'size': f"{photo_dict.get('o_width', 'N/A')}x{photo_dict.get('o_height', 'N/A')}",
         'image_url': safe_str(photo_dict.get('url_o')),
         'notes': 'N/A',
-        'tags': tags_str
+        'tags': 'N/A'
     }
 
+
+def normalize_filename(inst_name, inst_id):
+    """Centralized function to generate consistent filename format."""
+    # Clean institution name consistently
+    cleaned_name = "".join(c for c in inst_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    return f"{cleaned_name}.csv"
+
+
 # ----------------- ROUTINE 1: check local and remote ------------------- #
+
 
 def check_metadata_status():
     """Routine 1: Analyze all institutions and return prioritized list."""
@@ -99,9 +108,8 @@ def check_metadata_status():
     
     for inst in institution_list:
         inst_name = safe_str(inst.get('name', {}).get('_content', 'unknown'))
-        inst_name = "".join(c for c in inst_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
         inst_id = safe_str(inst.get('nsid'))
-        csv_filename = metadata_dir / f"{inst_name}_-_{inst_id}.csv"
+        csv_filename = metadata_dir / normalize_filename(inst_name, inst_id)
         
         # Get Flickr total
         flickr_total = None
@@ -131,18 +139,19 @@ def check_metadata_status():
             'coverage': coverage
         })
         
-        print(f"{inst_name:<50} | {flickr_total:>6,} | {csv_photo_count:>6} | {coverage:>6.1%}")
+        print(f"{inst_name:<50} | {flickr_total:>7,} | {csv_photo_count:>7} | {coverage:>6.1%}")
     
     print("=" * 80)
     
-    # Sort by ascending coverage (0% first)
-    prioritized = sorted(status_list, key=lambda x: x['coverage'])
+    # Sort by ascending coverage (0% first), then by smallest total for ties
+    prioritized = sorted(status_list, key=lambda x: (x['coverage'], x['flickr_total']))
     
     print(f"\n📋 PRIORITIZED LIST (lowest coverage first):")
     for i, item in enumerate(prioritized[:10], 1):  # Show top 10
         print(f"{i:2d}. {item['name']:<50} {item['coverage']:>6.1%} ({item['csv_photos']}/{item['flickr_total']:,})")
     
     return prioritized
+
 
 # ----------------- ROUTINE 2: download  to local from remote ------------------- #
 
@@ -155,10 +164,18 @@ def download_metadata(institutions):
         inst_name = item['name']
         inst_id = item['id']
         csv_filename = item['csv_filename']
+        
         flickr_total = item['flickr_total']
         
         print(f"\n[{idx}/{len(institutions)}] 🟢 DOWNLOADING {inst_name} ({inst_id})")
         print(f"  Target: {flickr_total:,} photos | CSV: {csv_filename}")
+        
+        # Ensure header exists if file doesn't exist or is empty
+        if not csv_filename.exists() or count_csv_rows(csv_filename) == 0:
+            print(f"  📝 Creating new CSV with header...")
+            with open(csv_filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
         
         # Load existing
         existing_ids = get_csv_photo_ids(csv_filename)
@@ -209,13 +226,6 @@ def download_metadata(institutions):
                 if valid_new_photos:
                     with open(csv_filename, 'a', newline='', encoding='utf-8') as f:
                         writer = csv.DictWriter(f, fieldnames=fieldnames)
-                        
-                        # Write header if empty
-                        if count_csv_rows(csv_filename) == 0:
-                            f.seek(0)
-                            f.truncate()
-                            writer.writeheader()
-                        
                         writer.writerows(valid_new_photos)
                     
                     new_photos_this_run += len(valid_new_photos)
@@ -240,11 +250,14 @@ def download_metadata(institutions):
         status = "✅ COMPLETE" if len(existing_ids) >= flickr_total else "⏳ PARTIAL"
         print(f"  {status} {inst_name}: {len(existing_ids):,} photos")
 
+
+
 # ----------------- MAIN EXECUTION ------------------- #
 if __name__ == "__main__":
     print("Flickr Commons Metadata Collector")
     print("1. Check status")
     print("2. Download metadata (prioritized)")
+
     prioritized_institutions = check_metadata_status()
     
     response = input("\nDownload metadata now? (y/n): ").lower().strip()
