@@ -126,7 +126,7 @@ def check_metadata_status():
         csv_photo_count = len(get_csv_photo_ids(csv_filename))
         csv_row_count = count_csv_rows(csv_filename) + 1  # +1 for header
         
-        coverage = csv_photo_count / flickr_total if flickr_total > 0 else 0
+        coverage = csv_photo_count / flickr_total if flickr_total > 0 else 1
         
         status_list.append({
             'inst': inst,
@@ -189,24 +189,23 @@ def download_metadata(institutions):
         max_pages = 10000
         new_photos_this_run = 0
         consecutive_empty_pages = 0
-        empty_page_threshold = 25
+        empty_page_threshold = 1000
         
         while page <= max_pages and consecutive_empty_pages < empty_page_threshold:
             try:
                 print(f"  📄 Page {page}...")
-                photos = flickr.photos.search(
+                photos_info = flickr.people.getPublicPhotos(
                     user_id=inst_id,
-                    is_commons=True,
                     per_page=500,
                     page=page,
                     extras='description,date_upload,date_taken,geo,tags,o_dims,url_o,url_c,license,owner_name,views'
                 )
                 
-                photo_batch = photos['photos']['photo']
+                photo_batch = photos_info['photos']['photo']
                 if not photo_batch:
                     print(f"  ✓ No more photos")
                     break
-                
+
                 print(f"  Page {page}: {len(photo_batch)} found")
                 valid_new_photos = []
                 new_on_page = 0
