@@ -36,25 +36,16 @@ python API/basic_test.py
 ```
 
 
-# Dev notes
+# Dev logs
 
 ## Feb 23 2026
-I am considering switching to the flickrapi library instead, I think it is more stable.
 
 
-I am getting a lot of error messages due to rate limiting.
-```
-201 : Sorry, the Flickr API service is not currently available.
-```
 
-Flickr limits the access to the API per key. They ask for us to stay under **3600 queries per hour** across the whole key (which means the aggregate of all the users of the integration).
 
-Trying to use `extras` in search instead of `photo.getInfo`. (With one `search` query I can get 500 photos, while `getInfo`must be called on **every** photo).
+Metadata script seems ok.
 
-Not all metadata can be obtained with `extras`
-```    Skipping malformed photo: 'str' object has no attribute 'get'
-extras="description,license,date_upload,date_taken,owner_name,geo,tags,machine_tags,o_dims,views,url_o,url_c"
-```
+I checked the [Royal Museums Greenwhich](https://www.flickr.com/photos/nationalmaritimemuseum/with/38608148550/) that has 0 photos obtainable via search with the API. It seems that their pictures are copyrighted so it makes sense. This means that copyrighted picture don't appear.
 
 
 | Field         | Available via extras? | Notes                                                            |
@@ -71,3 +62,20 @@ extras="description,license,date_upload,date_taken,owner_name,geo,tags,machine_t
 | image_url     | ✅ Yes                 | url_o, url_c, url_m, etc.                                        |
 | notes         | ❌ No                  | Needs getInfo()                                                  |
 | tags          | ✅ Yes                 | photo.tags.tag[] array                                           |
+
+
+Not all metadata can be obtained with `extras`
+```    Skipping malformed photo: 'str' object has no attribute 'get'
+extras="description,license,date_upload,date_taken,owner_name,geo,tags,machine_tags,o_dims,views,url_o,url_c"
+```
+
+Trying to use `extras` in search instead of `photo.getInfo`. (With one `search` query I can get 500 photos, while `getInfo`must be called on **every** photo).
+
+Flickr limits the access to the API per key. They ask for us to stay under **3600 queries per hour** across the whole key (which means the aggregate of all the users of the integration).
+
+I am getting a lot of error messages due to rate limiting.
+```
+201 : Sorry, the Flickr API service is not currently available.
+```
+
+I am switching to the flickrapi library instead, I think it is more stable.
