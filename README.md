@@ -42,6 +42,11 @@ python API/basic_test.py
 
 ## Feb 24 2026
 
+Had to fixed a **truncating issue**:
+Flickr behaviors for high-volume Commons accounts: search scopes or server-side caps truncate results without error.
+FIX:
+Replaced `flickr.photos.search(user_id=inst_id, is_commons=True, ...)` with `flickr.people.getPublicPhotos(user_id=inst_id, ...)`.
+
 [metadata script](API/metadata.py) script seems ok.
 
 I checked the [Royal Museums Greenwhich](https://www.flickr.com/photos/nationalmaritimemuseum/with/38608148550/) that has 0 photos obtainable via search with the API. It seems that their pictures are copyrighted so it makes sense. This means that copyrighted picture don't appear.
