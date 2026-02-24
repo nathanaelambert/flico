@@ -16,7 +16,7 @@ through the python library [flickrapi](https://pypi.org/project/flickrapi/)
 ```
 git clone git@github.com:nathanaelambert/flico.git
 ```
-2. copy and rename `.env.example` as `.env`
+2. copy and rename [.env.example](.env.example) as `.env`
 3. put your Flickr API key and secret in the `.env` file
 4. create a python virtual environment
 ```
@@ -30,7 +30,7 @@ source .venv/bin/activate
 ```
 python -m pip install pip-requirements.txt
 ```
-7. check that API key works
+7. run the [basic test](API/basic_test.py) to check that the API works
 ```
 python API/basic_test.py
 ```
@@ -43,7 +43,7 @@ python API/basic_test.py
 
 
 
-Metadata script seems ok.
+[metadata script](API/metadata.py) script seems ok.
 
 I checked the [Royal Museums Greenwhich](https://www.flickr.com/photos/nationalmaritimemuseum/with/38608148550/) that has 0 photos obtainable via search with the API. It seems that their pictures are copyrighted so it makes sense. This means that copyrighted picture don't appear.
 
