@@ -6,6 +6,35 @@ from pathlib import Path
 from dotenv import load_dotenv
 import flickrapi
 
+"""
+This file contains two main routines:
+- check_metadata_status():
+ that checks how much of the metadata from
+Flickr commons is downloaded locally to metadata/
+- download_metadata(institutions):
+ that completes the missing metadata by downloading it
+
+Both routine require an API key to work
+
+The following metadata is stored for each photo:
+id,
+secret,
+title,
+description,
+date_taken,
+date_uploaded,
+latitude,
+longitude,
+size,
+image_url
+
+The following elements are not part of the metadata:
+comments,
+notes,
+tags,
+favorites
+"""
+
 
 # ----------------- SETUP ------------------- #
 load_dotenv()
