@@ -2,6 +2,10 @@ import os
 from dotenv import load_dotenv
 import flickr_api
 
+"""
+This simple routine makes sure that one's Flickr API key works
+"""
+
 # Load .env variables
 load_dotenv()
 
