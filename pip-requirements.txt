@@ -6,3 +6,6 @@ ipykernel
 jupyter
 plotly
 numpy
+streamlit
+folium
+streamlit-folium
