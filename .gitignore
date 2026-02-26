@@ -2,4 +2,5 @@
 .env
 dir/
 metadata/
+metadata_combined/
 __pycache__
