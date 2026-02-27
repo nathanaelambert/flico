@@ -31,7 +31,11 @@ def aggregate_flickr_commons():
     
     # Concatenate all dataframes and saves
     combined_df = pd.concat(all_dfs, ignore_index=True)
+
     combined_df.to_csv(output_path, index=False)
+
+
+
     print(f"Aggregated {len(csv_files)} institutions into {output_path}")
     print(f"Total pictures: {len(combined_df)}")
 
