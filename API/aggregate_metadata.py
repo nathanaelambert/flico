@@ -3,10 +3,8 @@ import os
 from pathlib import Path
 
 def aggregate_flickr_commons():
-    # Get directory containing THIS script (analysis/processing/)
     script_dir = Path(__file__).parent
-    # Navigate: processing/ -> analysis/ -> project root
-    project_root = script_dir.parent.parent  
+    project_root = script_dir.parent  
     metadata_dir = project_root / "metadata"
     output_dir = project_root / "metadata_combined"
     
