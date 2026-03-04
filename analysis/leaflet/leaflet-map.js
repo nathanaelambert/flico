@@ -1,4 +1,7 @@
-fetch('../../metadata_combined/flickr_commons_pictures.csv')
+const BASE_DIR = new URL('../../data/metadata_combined/', import.meta.url);
+const dataPath = new URL('flickr_commons_pictures.csv', BASE_DIR);
+fetch(dataPath).then(r => r.text()).then(console.log);
+
     .then(response => response.text())
     .then(csvText => {
         const { data, errors } = Papa.parse(csvText, {
