@@ -37,8 +37,17 @@ python API/basic_test.py
 
 
 # Dev logs
+## march 9 2026
+need migration manager and version control?
+Using postgresql database
+installation
+```
+sudo apt install postgresql postgresql-contrib
+```
 
 
+## March 3 2026
+Focusing on time aspect. Will incorporate image analysis in pipeline. Probably reverse image search.
 
 ## Feb 24 2026
 
