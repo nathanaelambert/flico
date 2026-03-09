@@ -24,6 +24,7 @@ def test_get_public_photos(owner_nsid="134017397@N03"):
     )['photos']
     print(f"total number of photos: {photos['total']}")
     print(photos['photo'][2])
+    
 if __name__ == "__main__":
     # test_institution()
     test_get_public_photos()
