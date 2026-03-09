@@ -42,12 +42,9 @@ API_KEY = os.getenv('FLICKR_API_KEY')
 API_SECRET = os.getenv('FLICKR_API_SECRET')
 if not API_KEY or not API_SECRET:
     raise ValueError("FLICKR_API_KEY and FLICKR_API_SECRET must be set in .env")
-
-
 flickr = flickrapi.FlickrAPI(API_KEY, API_SECRET, format='parsed-json')
 metadata_dir = Path("metadata")
 metadata_dir.mkdir(exist_ok=True)
-
 
 # ----------------- UTILS ------------------- #
 def safe_str(value):
