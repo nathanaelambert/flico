@@ -13,6 +13,8 @@ This file contains two main routines:
 Flickr commons is downloaded locally to metadata/
 - download_metadata(institutions):
  that completes the missing metadata by downloading it
+ as 1 csv file per institution. CSV was originally choosen
+ for it's simplicity. 
 
 Both routine require an API key to work
 
