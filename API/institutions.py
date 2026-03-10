@@ -6,6 +6,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 import flickrapi
 
+"""
+Fetches and prints all 123 institutions from flickr commons
+this script was written to test the API and get examples nsid
+"""
+
 # ----------------- SETUP ------------------- #
 load_dotenv()
 API_KEY = os.getenv('FLICKR_API_KEY')
