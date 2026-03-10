@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 def aggregate_flickr_commons():
+    """concatenates 123 metadata csvs into a giant one"""
     script_dir = Path(__file__).parent
     project_root = script_dir.parent  
     metadata_dir = project_root / "metadata"
