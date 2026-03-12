@@ -18,33 +18,55 @@ git clone git@github.com:nathanaelambert/flico.git
 ```
 2. copy and rename [.env.example](.env.example) as `.env`
 3. put your Flickr API key and secret in the `.env` file
-4. create a python virtual environment
+4. put the correct database host and port in `.env`
+5. create a python virtual environment
 ```
 python -m venv .venv
 ```
-5. Activate the venv
+6. Activate the venv
 ```
 source .venv/bin/activate
 ```
-6. install pip requirements
+7. install pip requirements
 ```
 python -m pip install pip-requirements.txt
 ```
-7. run the [basic test](API/basic_test.py) to check that the API works
+8. run the [basic test](API/basic_test.py) to check that the API works
 ```
 python API/basic_test.py
 ```
 
 
 # Dev logs
+## March 12 2026
+1. Installing postgres locally (on ubuntu)
+```
+sudo apt install postgresql
+```
+2. Starting the daemon on TCP 5432 with systemctl
+```
+sudo systemctl status postgresql     # Check if PostgreSQL is running
+sudo systemctl start postgresql      # Start PostgreSQL  
+sudo systemctl enable postgresql     # Auto-start on boot
+```
+3. connecting as interactive postgres user (changes shell context)
+```
+sudo -i -u postgres
+```
+4. executing the script as postgres user to initialize the database
+```
+psql -f flickr_commons_metadata.sql
+```
+
+Other useful commands
+```
+sudo systemctl stop postgresql       # Stop PostgreSQL daemon
+sudo systemctl restart postgresql    # Restart PostgreSQL
+```
+
 ## march 9 2026
 need migration manager and version control?
 Using postgresql database
-installation
-```
-sudo apt install postgresql postgresql-contrib
-```
-
 
 ## March 3 2026
 Focusing on time aspect. Will incorporate image analysis in pipeline. Probably reverse image search.
