@@ -39,6 +39,11 @@ python API/basic_test.py
 
 
 # Dev logs
+## March 13 2026
+Current method consisted in copy/paste sql as superuser for db creation.
+Connecting via psycopg2 as crawler to download institutions
+
+installing (with snap) `pgadmin4` because I'm sick of the ugly CLI
 ## March 12 2026
 1. Installing postgres locally (on ubuntu)
 ```
