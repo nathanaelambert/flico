@@ -19,19 +19,20 @@ git clone git@github.com:nathanaelambert/flico.git
 2. copy and rename [.env.example](.env.example) as `.env`
 3. put your Flickr API key and secret in the `.env` file
 4. put the correct database host and port in `.env`
-5. create a python virtual environment
+5. put the correct password for your database user (dev) in `.env`
+6. create a python virtual environment
 ```
 python -m venv .venv
 ```
-6. Activate the venv
+7. Activate the venv
 ```
 source .venv/bin/activate
 ```
-7. install pip requirements
+8. install pip requirements
 ```
 python -m pip install pip-requirements.txt
 ```
-8. run the [basic test](API/basic_test.py) to check that the API works
+9. run the [basic test](API/basic_test.py) to check that the API works
 ```
 python API/basic_test.py
 ```
@@ -49,13 +50,9 @@ sudo systemctl status postgresql     # Check if PostgreSQL is running
 sudo systemctl start postgresql      # Start PostgreSQL  
 sudo systemctl enable postgresql     # Auto-start on boot
 ```
-3. connecting as interactive postgres user (changes shell context)
+3. connecting as interactive postgres user (changes shell context) and executing script
 ```
-sudo -i -u postgres
-```
-4. executing the script as postgres user to initialize the database
-```
-psql -f flickr_commons_metadata.sql
+sudo -i -u postgres psql -f flickr_commons_metadata.sql
 ```
 
 Other useful commands
