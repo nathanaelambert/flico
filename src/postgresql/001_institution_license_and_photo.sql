@@ -1,0 +1,111 @@
+CREATE TABLE institution (
+    nsid TEXT PRIMARY KEY,
+    name TEXT,
+    date_launch BIGINT, -- unix time
+    website TEXT,
+    license TEXT,
+    flickr_page TEXT,
+    --icon_server
+    icon_farm INT,
+    icon_server TEXT
+);
+--http://farm{icon_farm}.staticflickr.com/{icon_server}/buddyicons/{nsid}.jpg
+
+CREATE TABLE license (
+    id INT PRIMARY KEY,
+    name TEXT,
+    url TEXT
+);
+
+CREATE TABLE photo (
+    PRIMARY KEY (owner_nsid, id),
+    FOREIGN KEY (owner_nsid) REFERENCES institution(nsid),
+    FOREIGN KEY (license_id) REFERENCES license(id),
+    -- photo page at https://www.flickr.com/photos/{owner_nsid}/{id}
+    id BIGINT,
+    owner_nsid TEXT,
+    secret TEXT,
+    server INT,
+    farm INT,
+    title TEXT,
+    is_public BOOLEAN,
+    is_friend BOOLEAN,
+    is_family BOOLEAN,
+    --license
+    license_id INT,
+    --description
+    description TEXT,
+    --o_dims
+    original_width INT,
+    original_height INT,
+    --date_upload
+    date_upload BIGINT,          --unix timestamp (number of seconds since Jan 1st 1970 GMT.)
+    --last_update
+    last_update BIGINT,          --unix timestamp
+    --date_taken
+    date_taken TIMESTAMP,        --in owner time zone
+    date_taken_granularity INT,  --"0": Y-m-d H:i:s, "4": Y-m, "6": Y, "8": Circa...
+    date_taken_unknown BOOLEAN,
+    --owner_name
+    owner_name TEXT,
+    --views
+    views INT,
+    --tags
+    tags TEXT,
+    --machine_tags
+    machine_tags TEXT,
+    --original_format
+    original_secret TEXT,
+    original_format TEXT,
+    --geo
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    accuracy INT,               --??              
+    context INT,                --"0": not defined, "1": indoors, "2": outdoors
+    --media
+    media TEXT,
+    media_status TEXT,
+    --path_alias
+    path_alias TEXT,            --??
+    --url_sq
+    url_sq TEXT,                --cropped 75px square
+    height_sq INT,
+    width_sq INT,
+    --url_t
+    url_t TEXT,                 --longest edge 100px
+    height_t INT,
+    width_t INT,
+    --url_s
+    url_s TEXT,                 --longest edge 240px
+    height_s INT,
+    width_s INT,
+    --url_q
+    url_q TEXT,                 --cropped 150px square
+    height_q INT,
+    width_q INT,
+    --url_m
+    url_m TEXT,                 --longest edge 240px
+    height_m INT,
+    width_m INT,
+    --url_n
+    url_n TEXT,                 --longest edge 320px
+    height_n INT,
+    width_n INT,
+    --url_z
+    url_z TEXT,                 --longest edge 640px
+    height_z INT,
+    width_z INT,
+    --url_c
+    url_c TEXT,                 --longest edge 800px
+    height_c INT,
+    width_c INT,
+    --url_l
+    url_l TEXT,                 --longest edge 1024px
+    height_l INT,
+    width_l INT,
+    --url_o
+    url_o TEXT,                 --original dimensions
+    height_o INT,
+    width_o INT
+);
+
