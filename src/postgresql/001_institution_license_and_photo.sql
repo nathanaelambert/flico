@@ -1,3 +1,5 @@
+\c "flickr_commons_metadata";
+
 CREATE TABLE institution (
     nsid TEXT PRIMARY KEY,
     name TEXT,
