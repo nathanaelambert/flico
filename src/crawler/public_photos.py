@@ -6,6 +6,16 @@ from dotenv import load_dotenv
 
 from connector import get_flickr_endpoint
 
+RESET = '\033[0m'
+WHITE = '\033[97m'
+GREY =  '\033[90m' 
+RED =  '\033[31m'
+GREEN = '\033[32m'
+YELLOW = '\033[33m'
+BLUE = '\033[34m'
+CYAN = '\033[36m'  
+
+
 def get_public_photos(owner_nsid: str, owner_name: str):
     """Fetch Flickr photos from institution and save to PostgreSQL"""
     flickr = get_flickr_endpoint()
@@ -16,8 +26,22 @@ def get_public_photos(owner_nsid: str, owner_name: str):
     )
     start_page = 1
     while start_page > 0:
-        total, page, perpage, pages = _run_a_batch(owner_nsid, conn, flickr, start_page)
-        print(f"{page:03d} / {pages:03d} : {perpage} pics downloaded from {owner_name}, {owner_nsid}")
+        total, page, perpage, pages, errors, duplicates = _run_a_batch(owner_nsid, 
+                                                           conn, flickr, start_page)
+        pics_saved = perpage - len(errors) - duplicates
+        match pics_saved:
+            case 500:
+                color_pics = GREEN
+            case 0:
+                color_pics = GREY
+            case _:
+                color_pics = YELLOW
+        print(f"{GREY}page {RESET}"
+              f"{WHITE}{page:03d}{RESET}"
+              f"{GREY} / {pages:03d} :{RESET} "
+              f"{color_pics}{pics_saved:03d}{RESET}"
+              f"{GREY} pics downloaded from {WHITE}{owner_name}{RESET}"
+              f"{GREY}, {owner_nsid}{RESET}")
         if page < pages:
             start_page += 1
         else:
@@ -25,6 +49,8 @@ def get_public_photos(owner_nsid: str, owner_name: str):
     conn.close()
 
 def _run_a_batch(owner_nsid, connection, flickr, start_page=1):
+    duplicates = 0
+    errors = []
     cur = connection.cursor()
     try:
         photos = flickr.people.getPublicPhotos(user_id=owner_nsid,
@@ -34,8 +60,8 @@ def _run_a_batch(owner_nsid, connection, flickr, start_page=1):
                 'url_s, url_q, url_m, url_n, url_z, url_c, url_l, url_o'),
         )['photos']
     except flickrapi.exceptions.FlickrError as e:
-        print(f"Flickr API error page {start_page}: {e}")
-        return 0, start_page, 0, 0
+        print(f"{RED}Flickr API error page {start_page}: {e}{RESET}")
+        return 0, start_page, 0, 0, errors, duplicates
     for p in photos['photo']:
         try:
             cur.execute(_photo_insert_query(), {
@@ -83,13 +109,14 @@ def _run_a_batch(owner_nsid, connection, flickr, start_page=1):
                 "height_o":        p.get("height_o"),
                 "width_o":         p.get("width_o"),
             })
-        except psycopg2.errors.UniqueViolation:
-            pass
+            if not cur.fetchone():
+                duplicates += 1
         except psycopg2.Error as e:
-            (f"Photo {p['id']}: {e}")
+            print(f"{RED}Photo {p['id']}: {e}{RESET}")
+            errors.append(f"Photo {p['id']}: {e}")
     connection.commit()
     cur.close()
-    return photos['total'], photos['page'], photos['perpage'], photos['pages']
+    return photos['total'], photos['page'], photos['perpage'], photos['pages'], errors, duplicates
     
 
 def _photo_insert_query():
@@ -145,6 +172,7 @@ def _photo_insert_query():
             %(url_o)s, %(height_o)s, %(width_o)s
         )
         ON CONFLICT (owner_nsid, id) DO NOTHING
+        RETURNING id;
         """
 
 if __name__ == "__main__":
