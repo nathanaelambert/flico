@@ -16,7 +16,7 @@ def get_public_photos(owner_nsid: str, owner_name: str):
     )
     start_page = 1
     while start_page > 0:
-        total, page, perpage, pages = run_a_batch(owner_nsid, conn, flickr, start_page)
+        total, page, perpage, pages = _run_a_batch(owner_nsid, conn, flickr, start_page)
         print(f"{page:03d} / {pages:03d} : {perpage} pics downloaded from {owner_name}, {owner_nsid}")
         if page < pages:
             start_page += 1
@@ -24,7 +24,7 @@ def get_public_photos(owner_nsid: str, owner_name: str):
             start_page = 0 
     conn.close()
 
-def run_a_batch(owner_nsid, connection, flickr, start_page=1):
+def _run_a_batch(owner_nsid, connection, flickr, start_page=1):
     cur = connection.cursor()
     try:
         photos = flickr.people.getPublicPhotos(user_id=owner_nsid,
@@ -38,7 +38,7 @@ def run_a_batch(owner_nsid, connection, flickr, start_page=1):
         return 0, start_page, 0, 0
     for p in photos['photo']:
         try:
-            cur.execute(photo_insert_query(), {
+            cur.execute(_photo_insert_query(), {
                 'id': p['id'], 'owner': p['owner'], 'secret': p['secret'],
                 'server': int(p['server']), 'farm': p['farm'], 'title': p['title'],
                 'ispublic': bool(p['ispublic']), 'isfriend': bool(p['isfriend']), 'isfamily': bool(p['isfamily']),
@@ -92,7 +92,7 @@ def run_a_batch(owner_nsid, connection, flickr, start_page=1):
     return photos['total'], photos['page'], photos['perpage'], photos['pages']
     
 
-def photo_insert_query():
+def _photo_insert_query():
     return """
         INSERT INTO photo (
             id, owner_nsid, secret,
