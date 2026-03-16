@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 import flickrapi
+import psycopg2
 
 
 def get_flickr_endpoint():
@@ -12,7 +13,7 @@ def get_flickr_endpoint():
     return flickrapi.FlickrAPI(API_KEY, API_SECRET, format='parsed-json')
 
 def get_db_connection():
-""" responsibility of closing the connection is on caller"""
+    """ responsibility of closing the connection is on caller"""
     load_dotenv()
     return = psycopg2.connect(
         dbname=os.getenv('PGDATABASE'), 
