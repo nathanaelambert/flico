@@ -169,14 +169,17 @@ def _photo_insert_query():
 
 if __name__ == "__main__":
     institutions = [
-        ("100017484@N04",	"LetterformArchive"),
-        ("104959762@N04",	"Cloyne & District Historical Society"),
-        ("105662205@N04",	"UC Berkeley, Department of Geography"),
-        ("107895189@N03",	"Tasmanian Archives and State Library (Commons)"),
-        ("108605878@N06",	"The Finnish Museum of Photography"),
-        ("108745105@N04",	"UBC Library Digitization Centre"),
-        ("109550159@N08",	"Costică Acsinte Archive"),
-        ("11334970@N05",	"Royal Museums Greenwich"),
+        ### COMPLETED (march 16 2026)
+        # ("8623220@N02",	"The Library of Congress"),
+        # ("100017484@N04",	"LetterformArchive"),
+        # ("104959762@N04",	"Cloyne & District Historical Society"),
+        # ("105662205@N04",	"UC Berkeley, Department of Geography"),
+        # ("107895189@N03",	"Tasmanian Archives and State Library (Commons)"),
+        # ("108605878@N06",	"The Finnish Museum of Photography"),
+        # ("108745105@N04",	"UBC Library Digitization Centre"),
+        # ("109550159@N08",	"Costică Acsinte Archive"),
+
+        ### TO DOWNLOAD
         ("123233489@N03",	"Aalto University Library and Archive Commons"),
         ("12403504@N02",	"The British Library"),
         ("124327652@N02",	"tyrrellhistoricallibrary"),
@@ -203,8 +206,6 @@ if __name__ == "__main__":
         ("148865600@N02",	"Halifax Municipal Archives"),
         ("150408343@N02",	"Médiathèques Valence Romans agglomération"),
         ("164711667@N06",	"CADL_LocalHistory"),
-        ("200049760@N08",	"CommonsTestAccount"),
-        ("201268704@N06",	"CommonsPrivacyTest"),
         ("201312638@N04",	"Randolph Historical VT"),
         ("201555210@N04",	"archivesatncbs"),
         ("201585368@N05",	"Boston Public Library Digital"),
@@ -291,9 +292,11 @@ if __name__ == "__main__":
         ("99902797@N03",	"Schlesinger Library, RIAS, Harvard University"),
 
         
-
+        ### AVOIDED
         # ("49487266@N07",	"San Diego Air & Space Museum Archives"),
-        # ("8623220@N02",	"The Library of Congress"),
+        # ("11334970@N05",	"Royal Museums Greenwich"),
+        # ("200049760@N08",	"CommonsTestAccount"),
+        # ("201268704@N06",	"CommonsPrivacyTest"),
     ]
 
     flickr = get_flickr_endpoint()
