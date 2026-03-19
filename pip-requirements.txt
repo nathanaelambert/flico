@@ -1,12 +1,14 @@
-
-flickr_api
+psycopg2
+sqlalchemy
 python-dotenv
 flickrapi
 pandas
+
 ipykernel
 jupyter
 plotly
 numpy
-streamlit
-folium
-streamlit-folium
+
+# streamlit
+# folium
+# streamlit-folium
