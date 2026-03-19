@@ -1,5 +1,5 @@
 import pandas as pd
-import numpy as np
+
 from datetime import datetime
 
 from ..postgresql.connector import get_db_connection
