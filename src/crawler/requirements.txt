@@ -1,3 +1,0 @@
-python-dotenv
-flickrapi
-psycopg2
