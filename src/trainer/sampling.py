@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 def sample_by_year(df, max_per_year=500):
@@ -14,7 +13,12 @@ def sample_by_year(df, max_per_year=500):
             sampled_dfs.append(sampled)
         else:
             sampled_dfs.append(group)
-    return pd.concat(sampled_dfs, ignore_index=True)
+    
+    sampled_df = pd.concat(sampled_dfs, ignore_index=True)
+
+    print(f"Sampled {len(sampled_df):,} photos spanning {int(sampled_df['year'].min())}–{int(sampled_df['year'].max())}")
+
+    return sampled_df
 
 def _sample_uniform_low_granularity(year_group, max_per_year):
     sampled = []
