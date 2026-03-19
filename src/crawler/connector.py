@@ -13,7 +13,10 @@ def get_flickr_endpoint():
     return flickrapi.FlickrAPI(API_KEY, API_SECRET, format='parsed-json')
 
 def get_db_connection():
-    """ responsibility of closing the connection is on caller"""
+    """ responsibility of closing the connection is on caller.
+    Should not be used. Is present for legacy code that hasn't been
+    refactored. Instead use ..postgresql.connector to get a sqlalchemy engine
+    """
     load_dotenv()
     return psycopg2.connect(
         dbname=os.getenv('PGDATABASE'), 
