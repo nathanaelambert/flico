@@ -4,11 +4,16 @@ python-dotenv
 flickrapi
 pandas
 scikit-learn
-
+numpy
+torchvision
+transformers
+Pillow
+requests
+torch
+sentencepiece
 ipykernel
 jupyter
 plotly
-numpy
 
 # streamlit
 # folium
