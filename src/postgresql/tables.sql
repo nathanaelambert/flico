@@ -111,3 +111,13 @@ CREATE TABLE photo (
     width_o INT
 );
 
+CREATE TABLE machine_learning_photo (
+    PRIMARY KEY (owner_nsid, id),
+    FOREIGN KEY (owner_nsid, id) REFERENCES photo(owner_nsid, id),
+    id BIGINT,
+    owner_nsid TEXT,
+   
+    is_test_set BOOLEAN,
+    sig_lip_vect_o VECTOR(768),
+    sig_lip_vect_n VECTOR(768)
+);
