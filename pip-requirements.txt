@@ -3,6 +3,7 @@ sqlalchemy
 python-dotenv
 flickrapi
 pandas
+scikit-learn
 
 ipykernel
 jupyter
