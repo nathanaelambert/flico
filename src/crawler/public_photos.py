@@ -16,7 +16,7 @@ BLUE = '\033[34m'
 CYAN = '\033[36m'  
 
 def get_public_photos(owner_nsid: str, conn, flickr, owner_name: str):
-    """Fetch Flickr photos from institution and save to PostgreSQL"""
+    """Fetches Flickr photos from institution and save to PostgreSQL"""
     start_page = 1
     while start_page > 0:
         total, page, perpage, pages, errors, duplicates = _run_a_batch(owner_nsid, 
