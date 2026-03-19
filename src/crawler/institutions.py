@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from connector import get_flickr_endpoint
     
 def crawl_institutions():
-    """Fetch Flickr institutions and save to PostgreSQL"""
+    """Fetches Flickr institutions and save to PostgreSQL"""
     flickr = get_flickr_endpoint()
     load_dotenv()
     conn = psycopg2.connect(
