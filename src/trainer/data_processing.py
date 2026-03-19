@@ -26,5 +26,6 @@ def filter_dated_photos(df):
     return df
 
 if __name__ == "__main__":
-    filter_dated_photos(get_dated_photos())
+    pass
+    # filter_dated_photos(get_dated_photos())
 
