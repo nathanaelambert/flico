@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from typing import Literal
 
 def get_db_connection(user: Literal["trainer", "crawler", "server", "dev"]):
-    """Returns SQLAlchemy engine."""
+    """Returns SQLAlchemy engine. Connect services to postgres db"""
     if user not in ["trainer", "crawler", "server", "dev"]:
         raise ValueError(f"Invalid user: {user}")
     
