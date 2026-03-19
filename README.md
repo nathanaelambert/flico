@@ -39,6 +39,11 @@ python API/basic_test.py
 
 
 # Dev logs
+## March 19 2026
+Installing pgvector 
+```
+sudo apt install postgresql-18-pgvector
+```
 ## March 13 2026
 Current method consisted in copy/paste sql as superuser for db creation.
 Connecting via psycopg2 as crawler to download institutions
