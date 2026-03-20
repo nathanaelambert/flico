@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from typing import Literal
+from pgvector.psycopg2 import register_vector
+from sqlalchemy import event
 
 def get_db_connection(user: Literal["trainer", "crawler", "server", "dev"]):
     """Returns SQLAlchemy engine. Connect services to postgres db"""
@@ -20,4 +22,10 @@ def get_db_connection(user: Literal["trainer", "crawler", "server", "dev"]):
         f"@{os.getenv('PGHOST')}:{os.getenv('PGPORT', '5432')}"
         f"/{os.getenv('PGDATABASE')}"
     )
-    return create_engine(connection_string)
+    engine = create_engine(connection_string)
+    
+    @event.listens_for(engine, "connect")
+    def connect(dbapi_connection, connection_record):
+        register_vector(dbapi_connection, arrays=True)
+    
+    return engine
