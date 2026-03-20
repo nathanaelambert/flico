@@ -56,7 +56,7 @@ if __name__ == "__main__":
     mae_random = random_baseline(train)
     test_with_preds, metrics = evaluate(model, test)
 
-    """ RESULTS:
+    """ RESULTS (march 20 2026):
     Train  MeanAbsoluteError: 24.98 years
     Random MeanAbsoluteError: 57.59 years
     Test   MeanAbsoluteError: 25.45 years
