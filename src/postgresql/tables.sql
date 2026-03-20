@@ -118,6 +118,9 @@ CREATE TABLE machine_learning_photo (
     owner_nsid TEXT,
    
     is_test_set BOOLEAN,
-    sig_lip_vect_o VECTOR(768),
-    sig_lip_vect_n VECTOR(768)
+
+    sig_lip_vect_n VECTOR(768),
+    reg_n_pred_date INT, --date predicted by linear regression on latent space of siglip encoding with 320px input
+
+    sig_lip_vect_o VECTOR(768)
 );
