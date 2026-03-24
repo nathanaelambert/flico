@@ -15,6 +15,7 @@ ipykernel
 jupyter
 plotly
 pgvector
+joblib
 
 # streamlit
 # folium
