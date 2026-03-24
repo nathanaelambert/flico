@@ -14,6 +14,7 @@ from sqlalchemy import text
 from ..postgresql.connector import get_db_connection
 
 def get_data():
+    """queries the database and returns pictures with embeddings"""
     engine = get_db_connection("trainer")
     query = """
         SELECT mlp.owner_nsid, mlp.id, mlp.sig_lip_vect_n, mlp.is_test_set,
@@ -31,6 +32,7 @@ def get_data():
     return photos, train.reset_index(drop=True), test.reset_index(drop=True)
 
 def date_taken_train_model(train, model):
+    """"trains and returns the given models on the given data"""
     X = np.stack(train["sig_lip_vect_n"].values)
     y = train["year"]
     model.fit(X, y)
@@ -40,6 +42,7 @@ def date_taken_train_model(train, model):
     return model, mae
 
 def random_baseline(train):
+    """evaluate the performance of a random output"""
     np.random.seed(42)
     random_preds = np.random.randint(1850, 2027, size=len(train))
     mae_random = mean_absolute_error(train["year"], random_preds)
@@ -47,6 +50,7 @@ def random_baseline(train):
     return mae_random
 
 def evaluate(model, test):
+    """turns embeddings into a prediction using the model"""
     X_test = np.stack(test["sig_lip_vect_n"].values)
     y_test = test["year"]
     y_pred = model.predict(X_test)
@@ -57,6 +61,7 @@ def evaluate(model, test):
     return test, {"mae": mae}
 
 def save_predictions(model, photos):
+    """writes predicted dates to the databse"""
     engine = get_db_connection("trainer")
     for idx, row in photos.iterrows():
         try:
@@ -82,6 +87,7 @@ def save_predictions(model, photos):
 if __name__ == "__main__":
     photos, train, test = get_data()
 
+    """SVR has been best performing in a reasonable time (see alternatives below)"""
     print("SupportVectorRegression:")
     svr = joblib.load("models/svr50_siglip320_model.joblib")
     if svr:
