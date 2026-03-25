@@ -9,12 +9,12 @@ EXPORT_FOLDER = "../exported_plots/"
 def plot_institutions_per_year(df):
     """expects columns 'date_taken', 'owner_name"""
     df['year'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year
-    _plot_stacked(df, 'Pictures by Year by Institutions')
+    return _plot_stacked(df, 'Pictures by Year by Institutions')
 
 def plot_institutions_per_predicted_year(df):
     """expects columns 'reg_n_pred_date', 'owner_name'"""
     df['year'] = df['reg_n_pred_date']
-    _plot_stacked(df, 'Pictures by Predicted Year by Institutions')
+    return _plot_stacked(df, 'Pictures by Predicted Year by Institutions')
 
 def plot_join_preds_actual_dates(df):
     sns.set_theme(style="darkgrid")
@@ -40,29 +40,31 @@ def plot_join_preds_actual_dates(df):
     g.set_axis_labels("actual_year", "predicted_year")
     return g
 
-def plot_confusion_between_prediction_and_true_value(df):
-    """expects columns 'date_taken', 'reg_n_pred_date', 'owner_name'"""
+def plot_confusion_between_prediction_and_true_value(df, display=True):
+    """expects columns 'date_taken', 'reg_n_pred_date', 'owner_name', 'url_n'"""
     df = df.copy()
-    df['url'] = df.apply(lambda row: f"https://www.flickr.com/photos/{row['owner_nsid']}/{row['id']}", axis=1)
-    df['true_date'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year
+    df['page_url'] = df.apply(lambda row: f"https://www.flickr.com/photos/{row['owner_nsid']}/{row['id']}", axis=1)
+    df['true_date'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year.values
     pivot_df = df.groupby(['true_date', 'owner_name']).size().reset_index(name='count')
     owner_totals = pivot_df.groupby('owner_name')['count'].sum().sort_values(ascending=False)
     owner_order = owner_totals.index.tolist()
+    true_dates_x = df['true_date'].values
+    pred_dates_y = df['reg_n_pred_date'].values
+    custom = df[['owner_name', 'url_n', 'page_url']].values
     fig = px.scatter(
-        # df.sample(frac=0.03, random_state=42),
-        df,
-        x='true_date',
-        y='reg_n_pred_date',
-        color='owner_name',
-        labels={'true_date': 'actual_year', 'reg_n_pred_date': 'predicted_year'},
-        custom_data=['owner_name', 'url'],
-        category_orders={'owner_name': owner_order},
+        x=true_dates_x,
+        y=pred_dates_y,
+        color=df['owner_name'],
+        labels={'x': 'Year', 'y': 'Predicted Year (SigLip+SVR50)'},
+        custom_data=custom.tolist(),
+        category_orders={'color': owner_order},
         color_discrete_sequence=px.colors.qualitative.Pastel1 + px.colors.qualitative.Pastel2
     )
     fig.update_traces(
         mode='markers',
         marker=dict(size=3, opacity=0.9),
         hovertemplate="<b>%{customdata[0]}</b><br>" +
+            "<p>%{customdata[2]}</b><br>" + 
             "<img src='%{customdata[1]}' width='100'><extra></extra>",
     )
     fig.update_layout(
@@ -70,8 +72,6 @@ def plot_confusion_between_prediction_and_true_value(df):
         height=800,
         margin=dict(l=50, r=50, t=60, b=50),
         legend=dict(entrywidth=100),
-        xaxis_title='Year',
-        yaxis_title='Predicted Year (SigLip+SVR50)',
         legend_title='Owner Name',
         xaxis_tickangle=45,
         plot_bgcolor='white',  
@@ -92,7 +92,8 @@ def plot_confusion_between_prediction_and_true_value(df):
     ) 
     _add_x_equal_y_line(fig)
     _add_calibration_lines(fig, df)
-    fig.show()
+    if display:
+        fig.show()
     fig.write_html(EXPORT_FOLDER + "plot_confusion_between_prediction_and_true_value.html")
     return fig
 
@@ -192,4 +193,5 @@ def _plot_stacked(df, plot_title, log_scale=False):
         fig.update_layout(yaxis_type='log')
     
     fig.show()
+    return fig
 
