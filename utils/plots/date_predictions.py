@@ -4,6 +4,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 
+EXPORT_FOLDER = "../exported_plots/"
+
 def plot_institutions_per_year(df):
     """expects columns 'date_taken', 'owner_name"""
     df['year'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year
@@ -53,13 +55,15 @@ def plot_confusion_between_prediction_and_true_value(df):
         y='reg_n_pred_date',
         color='owner_name',
         labels={'true_date': 'actual_year', 'reg_n_pred_date': 'predicted_year'},
-        custom_data=['owner_nsid', 'id', 'url'],
+        custom_data=['owner_name', 'url'],
         category_orders={'owner_name': owner_order},
         color_discrete_sequence=px.colors.qualitative.Pastel1 + px.colors.qualitative.Pastel2
     )
     fig.update_traces(
-        marker=dict(size=3, opacity=0.05),
-        selector=dict(type="scatter"),
+        mode='markers',
+        marker=dict(size=3, opacity=0.9),
+        hovertemplate="<b>%{customdata[0]}</b><br>" +
+            "<img src='%{customdata[1]}' width='100'><extra></extra>",
     )
     fig.update_layout(
         width=1100,
@@ -89,6 +93,7 @@ def plot_confusion_between_prediction_and_true_value(df):
     _add_x_equal_y_line(fig)
     _add_calibration_lines(fig, df)
     fig.show()
+    fig.write_html(EXPORT_FOLDER + "plot_confusion_between_prediction_and_true_value.html")
     return fig
 
 def _add_x_equal_y_line(fig):
