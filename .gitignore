@@ -3,4 +3,5 @@
 dir/
 metadata/
 metadata_combined/
+models/
 __pycache__
