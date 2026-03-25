@@ -16,6 +16,7 @@ jupyter
 plotly
 pgvector
 joblib
+seaborn
 
 # streamlit
 # folium
