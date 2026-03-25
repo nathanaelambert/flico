@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools >= 67.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flico"
+version = "0.1.0"
+description = "Flickr commons exploration and ML analysis"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "psycopg2-binary",
+    "sqlalchemy",
+    "python-dotenv",
+    "flickrapi",
+    "pandas",
+    "scikit-learn",
+    "numpy",
+    "torchvision",
+    "transformers",
+    "Pillow",
+    "requests",
+    "torch",
+    "sentencepiece",
+    "pgvector",
+    "joblib",
+    "seaborn",
+    "dash",
+    "plotly",
+    "jupyter",
+    "ipykernel"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
