@@ -6,7 +6,7 @@ from transformers import AutoProcessor, AutoModel
 from sqlalchemy import text
 import numpy as np
 
-from ..postgresql.connector import get_db_connection
+from src.db.connector import get_engine
 
 model_name = "google/siglip-base-patch16-224"
 processor = AutoProcessor.from_pretrained(model_name)
@@ -25,7 +25,7 @@ def encode_with_siglip(url_n, size=320, vector_dimension=768):
 
 def generate_sig_lip_embeddings():
     """Generate sig_lip_vect_n embeddings in batch for machine_learning_photo table"""
-    engine = get_db_connection('trainer')
+    engine = get_engine('trainer')
     get_query = """
     SELECT mlp.owner_nsid, mlp.id, p.url_n
     FROM machine_learning_photo mlp
