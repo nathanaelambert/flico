@@ -123,9 +123,9 @@ INSTITUTIONS = [
         # ("11334970@N05",	"Royal Museums Greenwich"), # no public pic ?
 
         ### COMPLICATED cases
-        ("12403504@N02",	"The British Library"), # all dates are 2013 (page 15 / 2148)
-        ("49487266@N07",	"San Diego Air & Space Museum Archives"),
-        ("126377022@N07",	"Internet Archive Book Images"), # page 155 / 10628 : 500 pics downloaded from Internet Archive Book Images, 126377022@N07
+        # ("12403504@N02",	"The British Library"), # all dates are 2013 (page 300 / 2148)
+        ("49487266@N07",	"San Diego Air & Space Museum Archives"), # page 049 / 945
+        ("126377022@N07",	"Internet Archive Book Images"), # page 155 / 10628
         # ("200049760@N08",	"CommonsTestAccount"),
         # ("201268704@N06",	"CommonsPrivacyTest"),
     ]
