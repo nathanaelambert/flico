@@ -6,19 +6,6 @@ from sqlalchemy import event, create_engine, text
 from src.core.decorator import memoize
 import pandas as pd
 
-def get_df(user: str, columns: list[str]):
-    engine = get_db_connection("server")
-    query = """--sql
-        SELECT mlp.owner_nsid, mlp.id, 
-                mlp.is_test_set, mlp.reg_n_pred_date,
-                p.url_n, p.date_taken, p.date_taken_granularity,
-                p.title, p.description, p.owner_name, p.url_n
-        FROM machine_learning_photo mlp
-        JOIN photo p ON (p.owner_nsid, p.id) = (mlp.owner_nsid, mlp.id)
-        WHERE mlp.sig_lip_vect_n IS NOT NULL
-    """
-    return pd.read_sql_query(query, engine)
-
 @memoize
 def get_engine(user: Literal["trainer", "crawler", "server", "dev"]):
     """Returns SQLAlchemy engine. Connect services to postgres db"""
