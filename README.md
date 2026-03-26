@@ -4,11 +4,6 @@ exploring Flickr Commons
 ## Data
 Uses the Flickr Commons collection by access via its [API](https://www.flickr.com/services/api/) 
 
-through Alexis Mignon's [python implementation](https://github.com/alexis-mignon/python-flickr-api), ([docs](https://github.com/alexis-mignon/python-flickr-api/blob/master/docs/api-reference.md)
-)
-
-and/or
-
 through the python library [flickrapi](https://pypi.org/project/flickrapi/)
 
 ## Setup for devs
@@ -39,6 +34,13 @@ python API/basic_test.py
 
 
 # Dev logs
+## March 25 2026
+Some good decent predictions with SVR 
+reformatting project structure due to weird imports
+TODO: refactor trainer
+TODO: refactor public.photos
+
+
 ## March 19 2026
 Installing pgvector 
 ```
