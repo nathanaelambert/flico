@@ -1,7 +1,7 @@
 import src.utils.colors as c
 from src.utils.flickr import INSTITUTIONS
 from src.crawler.flickr import institutions, licenses, pictures
-from src.crawler.insert import insert_institution, insert_license, insert_picture
+from src.crawler.db import insert_institution, insert_license, insert_picture
     
 def crawl_institutions():
     for inst in institutions(): 
@@ -11,9 +11,9 @@ def crawl_licenses():
     for license in licenses():
         insert_license(license)
 
-def crawl_pictures(owner_nsid: int, owner_name: str):
+def crawl_pictures(owner_nsid: int, owner_name: str, start_page=1):
     pages = pictures(owner_nsid, 1)['pages']
-    for page in range(1, pages):
+    for page in range(max(1, min(start_page, pages - 1)), pages):
         pics_saved = 0
         for photo in pictures(owner_nsid, page)['photo']:
             try:
