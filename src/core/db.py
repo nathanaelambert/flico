@@ -37,7 +37,7 @@ def get_engine(user: Literal["trainer", "crawler", "server", "dev"]):
         f"@{os.getenv('PGHOST')}:{os.getenv('PGPORT', '5432')}"
         f"/{os.getenv('PGDATABASE')}"
     )
-    engine = create_engine(connection_string, echo=True)
+    engine = create_engine(connection_string, echo=False)
     
     @event.listens_for(engine, "connect")
     def connect(dbapi_connection, connection_record):
