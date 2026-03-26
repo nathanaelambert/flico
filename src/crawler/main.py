@@ -17,8 +17,8 @@ def crawl_pictures(owner_nsid: int, owner_name: str, start_page=1):
         pics_saved = 0
         for photo in pictures(owner_nsid, page)['photo']:
             try:
-                insert_picture(photo)
-                pics_saved += 1
+                if insert_picture(photo):
+                    pics_saved += 1
             except Exception as e:
                 print(f"{c.RED}Photo {photo['id']}: {e}{c.RESET}")
             
