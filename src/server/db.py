@@ -1,4 +1,4 @@
-from pandas import read_sql_query
+from pandas import read_sql_query, to_datetime
 from src.core.db import get_engine
 from sqlalchemy import text
 from datetime import datetime
@@ -14,5 +14,5 @@ def photos():
         """)
     df = read_sql_query(query, get_engine("server"))
     df['page_url'] = df.apply(lambda row: f"https://www.flickr.com/photos/{row['owner_nsid']}/{row['id']}", axis=1)
-    df['true_date'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year.values
+    df['true_date'] = to_datetime(df['date_taken'], errors='coerce').dt.year.values
     return df
