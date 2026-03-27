@@ -2,7 +2,7 @@ ALL_EXTRAS = 'description, license, date_upload, date_taken, owner_name, icon_se
 
 INSTITUTIONS = [
         ### COMPLETED (march 16 2026)
-        # ("8623220@N02",	"The Library of Congress"),
+        ("8623220@N02",	"The Library of Congress"),
         # ("100017484@N04",	"LetterformArchive"),
         # ("104959762@N04",	"Cloyne & District Historical Society"),
         # ("105662205@N04",	"UC Berkeley, Department of Geography"),
@@ -118,12 +118,12 @@ INSTITUTIONS = [
         
         ### Partially downloaded (causes errors)
         # ("7167652@N06",	"George Eastman Museum"), #issue with 0 date
-        # ("61270229@N05",	"NavyMedicine"), #issue with 0 date
+        ("61270229@N05",	"NavyMedicine"), #issue with 0 date
         # ("69269002@N04",	"libraryrahs@gmail.com"), #issue with 0 date
         # ("11334970@N05",	"Royal Museums Greenwich"), # no public pic ?
 
         ### COMPLICATED cases
-        # ("12403504@N02",	"The British Library"), # all dates are 2013 (page 300 / 2148)
+        ("12403504@N02",	"The British Library"), # all dates are 2013 (page 300 / 2148)
         ("49487266@N07",	"San Diego Air & Space Museum Archives"), # page 049 / 945
         ("126377022@N07",	"Internet Archive Book Images"), # page 155 / 10628
         # ("200049760@N08",	"CommonsTestAccount"),
