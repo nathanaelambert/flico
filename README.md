@@ -7,33 +7,34 @@ Uses the Flickr Commons collection by access via its [API](https://www.flickr.co
 through the python library [flickrapi](https://pypi.org/project/flickrapi/)
 
 ## Setup for devs
-1. clone repo 
+- clone repo 
 ```
 git clone git@github.com:nathanaelambert/flico.git
 ```
-2. copy and rename [.env.example](.env.example) as `.env`
-3. put your Flickr API key and secret in the `.env` file
-4. put the correct database host and port in `.env`
-5. put the correct password for your database user (dev) in `.env`
-6. create a python virtual environment
+- copy and rename [.env.example](.env.example) as `.env`
+- put your Flickr API key and secret in the `.env` file
+- put the correct database host and port in `.env`
+- put the correct password for your database user (dev) in `.env`
+- create a python virtual environment
 ```
 python -m venv .venv
 ```
-7. Activate the venv
+- activate the venv
 ```
 source .venv/bin/activate
 ```
-8. install pip requirements
+- from root folder : install python package in dev mode
 ```
-python -m pip install pip-requirements.txt
-```
-9. run the [basic test](API/basic_test.py) to check that the API works
-```
-python API/basic_test.py
+pip install -e .
 ```
 
 
 # Dev logs
+## March 26 2026
+Refactored the crawler
+For now the trainer is a broken mess
+Frustrated with plotly because the interactivity doesn't scale well in my opinion
+going to try bokeh
 ## March 25 2026
 Some good decent predictions with SVR 
 reformatting project structure due to weird imports
