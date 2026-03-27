@@ -38,9 +38,16 @@ def crawl_pictures(owner_nsid: int, owner_name: str, start_page=1):
 
 def crawl_pictures_from_all_institutions():
     for nsid, name in INSTITUTIONS:
-        crawl_pictures(nsid, name)
+        crawl_pictures(nsid, name, 231)
+
+
+def get_stats():
+    for nsid, name in INSTITUTIONS:
+        total = pictures(nsid, 1)['total']
+        print(f"{name}: {total} pics.")
 
 if __name__ == "__main__":
     # crawl_institutions()
     # crawl_licenses()
-    crawl_pictures_from_all_institutions()
+    # crawl_pictures_from_all_institutions()
+    get_stats()
