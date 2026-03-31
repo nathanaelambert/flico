@@ -30,6 +30,10 @@ pip install -e .
 
 
 # Dev logs
+## March 31 2026
+Completed the irst pipeline from Flickr -> predicted date.
+Observed issues with post 2000 dates. 
+Considering comparing perfs with commercial MLLM before 2000. 
 ## March 26 2026
 Refactored the crawler
 For now the trainer is a broken mess
