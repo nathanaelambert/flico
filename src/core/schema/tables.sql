@@ -92,7 +92,8 @@ CREATE TABLE photo (
     --url_n
     url_n TEXT,                 --longest edge 320px
     height_n INT,
-    width_n INT,
+    
+     INT,
     --url_z
     url_z TEXT,                 --longest edge 640px
     height_z INT,
@@ -122,5 +123,5 @@ CREATE TABLE machine_learning_photo (
     sig_lip_vect_n VECTOR(768),
     reg_n_pred_date INT, --date predicted by SVR 50 on latent space of siglip encoding with 320px input
 
-    sig_lip_vect_o VECTOR(768)
+    qwen3_pred_date INT, --date predicted by QWEN 3 (for benchmarking)
 );
