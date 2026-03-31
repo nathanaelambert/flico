@@ -29,6 +29,7 @@ dependencies = [
     "plotly",
     "jupyter",
     "ipykernel"
+    "openai"
 ]
 
 [tool.setuptools.packages.find]
