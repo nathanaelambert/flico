@@ -1,7 +1,6 @@
 import joblib
 import pandas as pd
 import numpy as np
-import ast
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.svm import SVR
@@ -11,25 +10,8 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from datetime import datetime
 from sqlalchemy import text
-from ..postgresql.connector import get_db_connection
+from src.trainer.db import photos_with_siglip_enbedding
 
-def get_data():
-    """queries the database and returns pictures with embeddings"""
-    engine = get_db_connection("trainer")
-    query = """
-        SELECT mlp.owner_nsid, mlp.id, mlp.sig_lip_vect_n, mlp.is_test_set,
-               p.url_n, p.date_taken, p.date_taken_granularity,
-               p.title, p.description
-        FROM machine_learning_photo mlp
-        JOIN photo p ON (p.owner_nsid, p.id) = (mlp.owner_nsid, mlp.id)
-        WHERE mlp.sig_lip_vect_n IS NOT NULL
-    """
-    photos = pd.read_sql_query(query, engine)
-    photos['year'] = pd.to_datetime(photos['date_taken'], errors='coerce').dt.year
-    train = photos[photos["is_test_set"] == False]
-    test = photos[photos["is_test_set"] == True]
-
-    return photos, train.reset_index(drop=True), test.reset_index(drop=True)
 
 def date_taken_train_model(train, model):
     """"trains and returns the given models on the given data"""
@@ -85,7 +67,7 @@ def save_predictions(model, photos):
 
 
 if __name__ == "__main__":
-    photos, train, test = get_data()
+    photos, train, test = photos_with_siglip_enbedding()
 
     """SVR has been best performing in a reasonable time (see alternatives below)"""
     print("SupportVectorRegression:")
