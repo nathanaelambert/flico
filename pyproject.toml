@@ -28,8 +28,9 @@ dependencies = [
     "dash",
     "plotly",
     "jupyter",
-    "ipykernel"
-    "openai"
+    "ipykernel",
+    "openai",
+    "asyncio"
 ]
 
 [tool.setuptools.packages.find]
