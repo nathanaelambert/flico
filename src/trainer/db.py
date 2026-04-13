@@ -2,6 +2,8 @@ from src.core.db import get_engine
 from sqlalchemy import text
 import pandas as pd
 
+#----------------GET DATA ---------------------------------
+
 def photos_with_date_taken():
     get_query = text("""--sql
     SELECT date_taken, date_taken_granularity, owner_nsid, id
@@ -18,17 +20,6 @@ def photos_with_description():
     """)
     return pd.read_sql_query(get_query, get_engine('trainer'))
 
-def insert_into_machine_learning_photo(df):
-    """fails on attempt to insert duplicate"""
-    df.to_sql(
-        name='machine_learning_photo',
-        con=get_engine('trainer'),
-        if_exists='append',
-        index=False,
-        method='multi',
-        chunksize=1000
-    )
-
 def photos_without_siglip_embedding():
     get_query = text("""--sql
     SELECT mlp.owner_nsid, mlp.id, p.url_n
@@ -38,6 +29,18 @@ def photos_without_siglip_embedding():
     """)
     photos = pd.read_sql_query(get_query, get_engine('trainer'))
     return photos
+
+
+def insert_into_machine_learning_photo(df):
+    """fails on attempt to insert duplicate"""
+    df.to_sql(
+        name='machine_learning_photo',
+        con=get_engine('trainer'),
+        if_exists='append',
+        index=False,
+        method='multi',
+        chunksize=1000
+    )  
 
 def update_siglip_embedding_picture(id: int, owner_nsid: str, embedding:list):   
     with get_engine('trainer').connect() as conn:
