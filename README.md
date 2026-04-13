@@ -27,15 +27,40 @@ source .venv/bin/activate
 ```
 pip install -e .
 ```
+## TUTORIAL how to alter remote db schema
+- connect to EPFL vpn
+- connect as app
+```
+psql -h flickr-dev.postgresql.dbaas.intranet.epfl.ch -p 5432 -U app -d app
+```
+- enter password
+2. alter schema
+```--sql
+ALTER TABLE machine_learning_photo
+ADD column_name datatype;
+```
+
+## TUTORIAL how to copy from local db to remote db (after schema is updated)
 
 
 # Dev logs
 
+## April 13 2026
+
+Qwen predictions are done and evaluated. Image processing yields 11 years mae, while QWEN3 yields 16 years of mae (both on test set).
+
+Trainer image pipeline might still be broken.
+
+starting to work on textual data: extracting date from description.
+
+
 ## April 1 2026
 Estimated cost and duration for Qwen3 preds: 33h 8chf
+
+
 connection to remote db
 ```
-psql -h flickr-dev.postgresql.dbaas.intranet.epfl.ch -p 5432 -U app -d app
+psql -h flickr-dev.postgresql.dbaas.intranet.epfl.ch -p 5432 -U dev -d app
 ```
 
 hôte : flickr-dev.postgresql.dbaas.intranet.epfl.ch port : 5432 base : app
@@ -57,12 +82,12 @@ Refactored the crawler
 For now the trainer is a broken mess
 Frustrated with plotly because the interactivity doesn't scale well in my opinion
 going to try bokeh
+
 ## March 25 2026
 Some good decent predictions with SVR 
 reformatting project structure due to weird imports
 TODO: refactor trainer
 TODO: refactor public.photos
-
 
 ## March 19 2026
 Installing pgvector 
@@ -87,7 +112,8 @@ sudo systemctl enable postgresql     # Auto-start on boot
 ```
 3. connecting as interactive postgres user (changes shell context) and executing script
 ```
-sudo -i -u postgres psql -f flickr_commons_metadata.sql
+sudo -i -u postgres 
+psql -f flickr_commons_metadata.sql
 ```
 
 Other useful commands
