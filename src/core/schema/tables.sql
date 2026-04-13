@@ -123,5 +123,7 @@ CREATE TABLE machine_learning_photo (
     sig_lip_vect_n VECTOR(768),
     reg_n_pred_date INT, --date predicted by SVR 50 on latent space of siglip encoding with 320px input
 
-    qwen3_pred_date INT, --date predicted by QWEN 3 (for benchmarking)
+    qwen3_pred_date INT, --date predicted by QWEN 3 with 320px input (for benchmarking image pipeline)
+
+    descr_pred_date INT, --date predicted by NLP algo reading the text description
 );
