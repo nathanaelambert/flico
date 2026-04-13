@@ -30,10 +30,28 @@ pip install -e .
 
 
 # Dev logs
+
+## April 1 2026
+Estimated cost and duration for Qwen3 preds: 33h 8chf
+connection to remote db
+```
+psql -h flickr-dev.postgresql.dbaas.intranet.epfl.ch -p 5432 -U app -d app
+```
+
+hôte : flickr-dev.postgresql.dbaas.intranet.epfl.ch port : 5432 base : app
+
 ## March 31 2026
 Completed the irst pipeline from Flickr -> predicted date.
 Observed issues with post 2000 dates. 
 Considering comparing perfs with commercial MLLM before 2000. 
+Using QWen3 vision.
+Working code, but slow (10s per pic).
+Need async to fire more queries I guess.
+Run in pgadmin to monitor progress:
+```--sql
+SELECT id, owner_nsid, qwen3_pred_date FROM public.machine_learning_photo
+WHERE qwen3_pred_date is NOT NULL
+```
 ## March 26 2026
 Refactored the crawler
 For now the trainer is a broken mess
