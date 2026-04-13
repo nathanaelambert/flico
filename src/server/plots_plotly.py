@@ -15,7 +15,7 @@ def plot_institutions_per_predicted_year(df):
     df['year'] = df['reg_n_pred_date']
     return _plot_stacked(df, 'Pictures by Predicted Year by Institutions')
 
-def plot_confusion_between_prediction_and_true_value(df, display=True):
+def plot_confusion_between_prediction_and_true_value(df, display=True, column='reg_n_pred_date'):
     """expects columns 'date_taken', 'reg_n_pred_date', 'owner_name', 'url_n'"""    
     pivot_df = df.groupby(['true_date', 'owner_name']).size().reset_index(name='count')
     owner_order = pivot_df.groupby('owner_name')['count'].sum().sort_values(ascending=False).index.tolist()
@@ -23,9 +23,9 @@ def plot_confusion_between_prediction_and_true_value(df, display=True):
     fig = px.scatter(
         df,
         x='true_date',
-        y='reg_n_pred_date',
+        y=column,
         color='owner_name',
-        labels={'x': 'Year', 'y': 'Predicted Year (SigLip+SVR50)'},
+        labels={'x': 'Year', 'y': f"Predicted Year ({column})"},
         custom_data=['owner_name', 'url_n', 'page_url'],
         category_orders={'owner_name': owner_order},
         color_discrete_sequence=px.colors.qualitative.Pastel1 + px.colors.qualitative.Pastel2
@@ -53,7 +53,7 @@ def plot_confusion_between_prediction_and_true_value(df, display=True):
         clickmode='event+select'
     )
     x_ticks = list(range(df['true_date'].min() // 10 * 10, df['true_date'].max() // 10 * 10 + 20, 10))
-    y_ticks = list(range(df['reg_n_pred_date'].min() // 10 * 10, df['reg_n_pred_date'].max() // 10 * 10 + 20, 10))
+    y_ticks = list(range(df[column].min() // 10 * 10, df[column].max() // 10 * 10 + 20, 10))
     fig.update_xaxes(
         range=[1800, 2050],
         gridcolor='lightgray',
@@ -67,7 +67,7 @@ def plot_confusion_between_prediction_and_true_value(df, display=True):
         tickvals=y_ticks,
     ) 
     _add_x_equal_y_line(fig)
-    _add_calibration_lines(fig, df)
+    _add_calibration_lines(fig, df, column)
     if display:
         fig.show()
     # fig.write_html(EXPORT_FOLDER + "plot_confusion_between_prediction_and_true_value.html")
@@ -81,9 +81,9 @@ def _add_x_equal_y_line(fig):
         line=dict(color="grey", width=1, dash="dash")
     )
 
-def _add_calibration_lines(fig, df):
+def _add_calibration_lines(fig, df, column):
     agg = (
-        df.groupby("true_date")["reg_n_pred_date"]
+        df.groupby("true_date")[column]
         .agg(["mean", "std", "count"])
         .reset_index()
     )
