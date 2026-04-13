@@ -2,9 +2,10 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, callback, callback_context
-from src.server.db import photos
+from src.server.db import photos, benchmark_photos
 
-df = photos()
+# df = photos()
+df = benchmark_photos()
 
 app = Dash(__name__)
 app.layout = html.Div([
@@ -13,6 +14,8 @@ app.layout = html.Div([
 ], style={'display': 'flex', 'flexDirection': 'row'})
 
 df = df.set_index(['true_date', 'reg_n_pred_date']).sort_index()
+# df = df.set_index(['true_date', 'qwen3_pred_date']).sort_index()
+
 
 @callback(
     Output("year-histogram", "figure"),
@@ -21,7 +24,7 @@ df = df.set_index(['true_date', 'reg_n_pred_date']).sort_index()
 def update_histogram(relayoutData):
     fig = px.density_heatmap(
         x=df.index.get_level_values(0),  # true_date
-        y=df.index.get_level_values(1),  # reg_n_pred_date
+        y=df.index.get_level_values(1),  # pred_date
         nbinsx=100, nbinsy=100,
         histfunc='count',
         labels={'x': 'True Year', 'y': 'Predicted Year', 'color': 'Count'},
