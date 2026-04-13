@@ -25,7 +25,7 @@ GRANT SELECT ON photo       TO server;
 GRANT SELECT ON license     TO server;
 GRANT SELECT ON machine_learning_photo TO server;
 
--- DEV is meant for dev to modify an visualize data as administratior
+-- DEV is meant for dev to modify the tables schema, add tables..,
 GRANT ALL PRIVILEGES ON DATABASE "flickr_commons_metadata" TO dev;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO dev;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO dev;
