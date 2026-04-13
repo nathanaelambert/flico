@@ -10,6 +10,14 @@ def photos_with_date_taken():
     """)
     return pd.read_sql_query(get_query, get_engine('trainer'))
 
+def photos_with_description():
+    get_query = text("""--sql
+    SELECT date_taken, date_taken_granularity, owner_nsid, id
+    FROM photo 
+    WHERE description IS NOT NULL
+    """)
+    return pd.read_sql_query(get_query, get_engine('trainer'))
+
 def insert_into_machine_learning_photo(df):
     """fails on attempt to insert duplicate"""
     df.to_sql(
