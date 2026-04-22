@@ -20,7 +20,6 @@ def institutions():
 def licenses():
     return flickr().photos.licenses.getInfo()['licenses']['license']
 
-
 def pictures(owner_nsid, start_page):
     return flickr().people.getPublicPhotos(
         user_id=owner_nsid,
