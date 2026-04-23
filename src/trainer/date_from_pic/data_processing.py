@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from src.trainer.db import photos_with_date_taken, insert_into_machine_learning_photo
 
 def populate_machine_learning_photo():
-    df500 = _sample_by_year(_filterfilter_bad_data(photos_with_date_taken()), 500)
+    df500 = _sample_by_year(_filter_bad_data(photos_with_date_taken()), 500)
     df_train, df_test = train_test_split(df500[['owner_nsid', 'id']], test_size=0.2, random_state=42)
     df_train['is_test_set'] = False
     df_test['is_test_set'] = True
