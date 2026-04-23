@@ -13,6 +13,7 @@ GRANT USAGE ON SCHEMA public TO crawler, server, dev, trainer;
 -- TRAINER is a service responsible of processing raw metadata into AI datasets, features and insights
 GRANT SELECT ON photo       TO trainer;
 GRANT SELECT, INSERT, UPDATE, DELETE ON machine_learning_photo TO trainer;
+GRANT SELECT, INSERT, UPDATE, DELETE ON geo_cluster TO trainer;
 
 -- CRAWLER is a service responsible of updating the metadata via Flickr API
 GRANT SELECT, INSERT, UPDATE, DELETE ON institution TO crawler;
@@ -24,6 +25,7 @@ GRANT SELECT ON institution TO server;
 GRANT SELECT ON photo       TO server;
 GRANT SELECT ON license     TO server;
 GRANT SELECT ON machine_learning_photo TO server;
+GRANT SELECT ON geo_cluster TO server;
 
 -- DEV is meant for dev to modify the tables schema, add tables..,
 GRANT ALL PRIVILEGES ON DATABASE "flickr_commons_metadata" TO dev;

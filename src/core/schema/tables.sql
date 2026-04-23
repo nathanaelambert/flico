@@ -62,7 +62,7 @@ CREATE TABLE photo (
     --geo
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
-    accuracy INT,               --??              
+    accuracy INT,               --"0": no geo data, "1": unprecise, "16":very precise            
     context INT,                --"0": not defined, "1": indoors, "2": outdoors
     --media
     media TEXT,
@@ -115,15 +115,30 @@ CREATE TABLE photo (
 CREATE TABLE machine_learning_photo (
     PRIMARY KEY (owner_nsid, id),
     FOREIGN KEY (owner_nsid, id) REFERENCES photo(owner_nsid, id),
+    FOREIGN KEY (geo_cluster_id) REFERENCES geo_cluster(id),
+    
     id BIGINT,
     owner_nsid TEXT,
+    geo_cluster_id INT,
    
     is_test_set BOOLEAN,
 
-    sig_lip_vect_n VECTOR(768),
+    sig_lip_vect_n VECTOR(768), --embedding of 320px pic
     reg_n_pred_date INT, --date predicted by SVR 50 on latent space of siglip encoding with 320px input
 
     qwen3_pred_date INT, --date predicted by QWEN 3 with 320px input (for benchmarking image pipeline)
 
-    descr_pred_date INT, --date predicted by NLP algo reading the text description
+    descr_pred_date INT  --date predicted by NLP algo reading the text description
+
 );
+
+CREATE TABLE geo_cluster (
+    id INT PRIMARY KEY,
+    min_latitude DOUBLE PRECISION,
+    avg_latitude DOUBLE PRECISION,
+    max_latitude DOUBLE PRECISION,
+    min_longitude DOUBLE PRECISION,
+    avg_longitude DOUBLE PRECISION,
+    max_longitude DOUBLE PRECISION
+);
+
