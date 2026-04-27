@@ -9,7 +9,14 @@ CREATE TABLE institution (
     flickr_page TEXT,
     --icon_server
     icon_farm INT,
-    icon_server TEXT
+    icon_server TEXT,
+
+    -- TODO: --
+    --status (sync level with flickr)
+    downloaded INT, --number of pics in the db
+    available INT,  --number of pics on flickr
+    most_recent_upload BIGINT, --timestamp of the most recent entry in the db
+    least_recent_upload BIGINT
 );
 --http://farm{icon_farm}.staticflickr.com/{icon_server}/buddyicons/{nsid}.jpg
 
