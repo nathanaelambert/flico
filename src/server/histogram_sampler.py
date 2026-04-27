@@ -27,19 +27,19 @@ def update_histogram(relayoutData):
         y=df.index.get_level_values(1),  # pred_date
         nbinsx=100, nbinsy=100,
         histfunc='count',
-        labels={'x': 'True Year', 'y': 'Predicted Year', 'color': 'Count'},
+        labels={'x': 'Label Year', 'y': 'Predicted Year', 'color': 'Count'},
         color_continuous_scale='Viridis',
     )
     fig.update_layout(
         clickmode='event+select',
-        xaxis_title="True Year",
+        xaxis_title="Label Year",
         yaxis_title="Predicted Year",
         height=500,
         width=500,
         coloraxis={
             'cmin': 0,
             'cmid':1, 
-            'cmax': 100,
+            'cmax': 10,
             'showscale': False,
         }
     )
@@ -62,17 +62,21 @@ def sample(clickData):
     try:
         subset = df.loc[(true_year, pred_year)]
         if subset.empty:
-            return [html.P(f"No images found for True: {true_year}, Predicted: {pred_year}.")]
+            return [html.P(f"No images found for Label: {true_year}, Predicted: {pred_year}.")]
         
         row = subset.sample(n=1).iloc[0]
         title = row.get('title', 'No title')
         institution = row.get('owner_name', 'no institution')
         true_date = row.get('true_date', true_year)
         pred_date = row.get('reg_n_pred_date', pred_year)
+        qwen_date = row.get('qwen3_pred_date', 'no qwen date')
         
         image_card = html.Div([
             html.A(f"{title}", href=row.get('page_url', '')),
-            html.P(f"True: {true_date}. Predicted: {pred_date}. -- From: {institution}"),
+            html.P(f"Date label  (metadata): {true_date}"),
+            html.P(f"Predicted (siglip+svr): {pred_date}"),
+            html.P(f"Baseline       (Qwen3): {qwen_date}"),
+            html.P(f"From: {institution}"),
             html.Img(src=row.get('url_n', ''), style={'width': '100%', 'height': 'auto'})
         ], style={'padding': 10, 'flex': 1, 'border': '1px solid #ccc', 'margin': '5px'})
         
