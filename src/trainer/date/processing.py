@@ -13,17 +13,20 @@ def filter(photos: pa.typing.DataFrame[Photo]) -> pa.typing.DataFrame[PhotoId]:
     photos['year'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year
     filtered_df = photos.dropna(subset=['year'])
     filtered_df = filtered_df[(filtered_df['year'] >= 1850) & (filtered_df['year'] <= 2026)]
-    filtered_df = filtered_df[filtered_df['owner_nsid'] != '12403504@N02'] # filtering the british library because all their dates are 2013 (unreliable dates)
-
+    # filtering the british library because all their dates are 2013 (unreliable dates)
+    filtered_df = filtered_df[filtered_df['owner_nsid'] != '12403504@N02']
     df_500 = _sample_by_year(filtered_df, 500)
     return df_500[['owner_nsid', 'id']]
-
 
 def _sample_by_year(df, max_per_year=500):
     """
     Sample max_per_year photos for each year prioritizing:
     1. Lowest granularity first (take all until limit reached)
     2. Maximum uniform owner distribution in the critical granularity level
+
+    Granularity is supposed to be a precision indicator of the metadata
+    More diversity of owners probably means less geographical bias
+    Limiting each year to 500 pics because there is a lot of recent pics and a few old ones
     """
     sampled_dfs = []   
     for year, group in df.groupby('year'):
