@@ -1,46 +1,36 @@
 from src.core.db import get_engine
 from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import insert
 import pandas as pd
+import pandera.pandas as pa
 
-#----------------GET DATA ---------------------------------
+class PhotoId(pa.DataFrameModel):
+    owner_nsid : str
+    id : int
 
-def photos_with_date_taken():
-    get_query = text("""--sql
-    SELECT date_taken, date_taken_granularity, owner_nsid, id
-    FROM photo 
-    WHERE date_taken IS NOT NULL
-    """)
-    return pd.read_sql_query(get_query, get_engine('trainer'))
-
-def photos_with_description():
-    get_query = text("""--sql
-    SELECT date_taken, date_taken_granularity, owner_nsid, id
-    FROM photo 
-    WHERE description IS NOT NULL
-    """)
-    return pd.read_sql_query(get_query, get_engine('trainer'))
-
-def photos_without_siglip_embedding():
-    get_query = text("""--sql
-    SELECT mlp.owner_nsid, mlp.id, p.url_n
-    FROM machine_learning_photo mlp
-    JOIN photo p ON (p.owner_nsid, p.id) = (mlp.owner_nsid, mlp.id)
-    WHERE mlp.sig_lip_vect_n IS NULL
-    """)
-    photos = pd.read_sql_query(get_query, get_engine('trainer'))
-    return photos
-
-
-def insert_into_machine_learning_photo(df):
-    """fails on attempt to insert duplicate"""
+def mark_photo(df: pa.typing.DataFrame[PhotoId]):
+    """
+    Mark photo creates entries in 'machine_learning_photo "
+    photo table is split into two tables:
+    'photo' with flickr metadata and 'machine_learning photo' with predcitions, internal params
+    this separation is motivated by two things:
+    1. protect flickr metadata 2. work with a lighter table (only copy useful pics)"""
+    def _psql_insert_ignore(table, conn, keys, data_iter):
+        # because there is no built-in pd.to_sql parameter for ON CONFLICT DO NOTHING
+        data = [dict(zip(keys, row)) for row in data_iter]
+        stmt = insert(table.table).values(data)
+        stmt = stmt.on_conflict_do_nothing(index_elements=['owner_nsid', 'id'])
+        result = conn.execute(stmt)
+        return result.rowcount
     df.to_sql(
         name='machine_learning_photo',
         con=get_engine('trainer'),
         if_exists='append',
         index=False,
-        method='multi',
+        method=_psql_insert_ignore,
         chunksize=1000
-    )  
+    )
+
 
 def update_siglip_embedding_picture(id: int, owner_nsid: str, embedding:list):   
     with get_engine('trainer').connect() as conn:
@@ -73,22 +63,4 @@ def update_qwen3_pred_date(id: int, owner_nsid: str, date: int):
         rowcount = result.rowcount
         conn.commit()
     return rowcount > 0
-
-def photos_with_siglip_enbedding():
-    query = """--sql
-        SELECT mlp.owner_nsid, mlp.id, mlp.sig_lip_vect_n,
-               mlp.is_test_set, mlp.qwen3_pred_date,
-               p.url_n, p.date_taken, p.date_taken_granularity,
-               p.title, p.description
-        FROM machine_learning_photo mlp
-        JOIN photo p ON (p.owner_nsid, p.id) = (mlp.owner_nsid, mlp.id)
-        WHERE mlp.sig_lip_vect_n IS NOT NULL
-    """
-    photos = pd.read_sql_query(query, get_engine('trainer'))
-    photos['year'] = pd.to_datetime(photos['date_taken'], errors='coerce').dt.year
-    train = photos[photos["is_test_set"] == False]
-    test = photos[photos["is_test_set"] == True]
-
-    return photos, train.reset_index(drop=True), test.reset_index(drop=True)
-
 
