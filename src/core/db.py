@@ -2,9 +2,9 @@ import os
 from dotenv import load_dotenv
 from typing import Literal
 from pgvector.psycopg2 import register_vector
+import pandas as pd
 from sqlalchemy import event, create_engine, text
 from src.core.decorator import memoize
-import pandas as pd
 
 @memoize
 def get_engine(user: Literal["trainer", "crawler", "server", "dev"]):
