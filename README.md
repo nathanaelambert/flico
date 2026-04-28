@@ -29,13 +29,13 @@ pip install -e .
 ```
 
 ## Instructions for Dev
-Read and writes operations are separated into 3 services:
+The 3 services and their responsibility:
 1. src.crawler.db
-Is responsible for writing flickr metadata to the db
+keeping the photo table updated with flickr pics 
 2. src.server.db
-Is responsible for all read to the db
+giving info about the data in the db, for monitoring and visuals
 3. src.trainer.db 
-Is responsible for writing computed data to the db
+reading and writing the processed data of the main pipelines
 
 If you need to read or write something, look in the coresponding module for existing methods to call. If non exist, write one.
 
