@@ -1,16 +1,16 @@
 import pandas as pd
 import pandera.pandas as pa
-from src.trainer.db import PhotoId
-from src.server.db import Photo
+from pandera.typing import DataFrame
+from src.core.schema import PhotoId, Photo
 
-def filter(photos: pa.typing.DataFrame[Photo]) -> pa.typing.DataFrame[PhotoId]:
+def filter(photos: DataFrame[Photo]) -> DataFrame[PhotoId]:
     """This code is responsible for providing a balanced dataset with accurate dates.
     The main problem encoutered so far (march 31st 2026) is identifying and filtering out
     pictures with innacurate date_taken. A lot of old pictures scanned or aquired in the 2000s
     have a recent date_taken, despite being taken in the past. Pictures before 2000 are of good
     quality.
     """
-    photos['year'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year
+    photos['year'] = pd.to_datetime(photos['date_taken'], errors='coerce').dt.year
     filtered_df = photos.dropna(subset=['year'])
     filtered_df = filtered_df[(filtered_df['year'] >= 1850) & (filtered_df['year'] <= 2026)]
     # filtering the british library because all their dates are 2013 (unreliable dates)
