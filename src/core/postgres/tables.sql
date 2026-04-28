@@ -128,7 +128,10 @@ CREATE TABLE machine_learning_photo (
     owner_nsid TEXT,
     geo_cluster_id INT,
    
-    is_test_set BOOLEAN,
+    is_test_set BOOLEAN, --deprecated
+
+    is_date_test BOOLEAN,
+    is_date_train BOOLEAN,
 
     sig_lip_vect_n VECTOR(768), --embedding of 320px pic
     reg_n_pred_date INT, --date predicted by SVR 50 on latent space of siglip encoding with 320px input
