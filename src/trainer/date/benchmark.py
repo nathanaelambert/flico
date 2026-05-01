@@ -7,11 +7,11 @@ import base64
 import requests
 from openai import OpenAI
 from typing import Optional
+import pandas as pd
 import json
+import src.utils.colors as c
 
-from src.trainer.db import photos_with_siglip_enbedding, update_qwen3_pred_date
-
-def encode_image(image_url: str) -> Optional[str]:   
+def _encode_image(image_url: str) -> Optional[str]:   
     try:
         user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 12.0; rv:42.0) Gecko/20100101 Firefox/42.0"
         response = requests.get(image_url, headers={"User-Agent": user_agent})
@@ -21,8 +21,8 @@ def encode_image(image_url: str) -> Optional[str]:
         print(f"Error during image download: {e}")
         return None
 
-def predict_date_taken(client, image_url: str) -> int:
-    base64_image = encode_image(image_url)
+def _predict_date_taken(client, image_url: str) -> int:
+    base64_image = _encode_image(image_url)
     if base64_image is not None:
         messages = [
             {
@@ -67,18 +67,23 @@ def predict_date_taken(client, image_url: str) -> int:
         print("Error during image encoding.")
         return 1000
 
-
-def main():
+def _predict_qwen3(url:str):
+    try:
+        predicted_date = _predict_date_taken(client, url)
+        print('.', end='', flush=True)
+        return predicted_date
+    except Exception as exc:
+        print(f"{c.RESET}\n{c.RED}X ({exc}){c.RESET}{c.GREY}")
+        return None
+   
+def qwen3(df_test: pd.DataFrame) -> pd.DataFrame:
     load_dotenv()
+    print(f"Establishing AIAAS connection (need VPN and API key)")
     client = OpenAI(base_url="https://inference.rcp.epfl.ch/v1", api_key=os.getenv('RCP_API_KEY_QWEN3'))
-    photos, train, test = photos_with_siglip_enbedding()
-    test = test[test['year'] <= 1999]
-    test = test[test['qwen3_pred_date'].isna()]
-    print(f"Test size: {len(test):,}")
-    for idx, pic in test.iterrows():
-        predicted_date = predict_date_taken(client, pic['url_n'])
-        update_qwen3_pred_date(pic['id'], pic['owner_nsid'], predicted_date)
-        print(f"succesfully predicted id: {pic['id']}, owner: {pic['owner_nsid']}")
-    
-if __name__ == "__main__":
-    main()
+    df_test['year'] = pd.to_datetime(df_test['date_taken'], errors='coerce').dt.year
+    df_test = df_test[df_test['year'] <= 1999]
+    df = df_test[df_test['qwen3_pred_date'].isna()]
+    df['qwen3_pred_date'] = df['url_n'].apply(_predict_qwen3)
+    print(f"\n{c.RESET}", flush=True)
+    # print(f"{c.GREEN} {df}{c.RESET}")
+    return df    
