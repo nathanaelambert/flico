@@ -57,6 +57,10 @@ ADD column_name datatype;
 
 # Dev logs
 
+## April 29 2026
+I'm trying to fix the sqlalchemy interface with the db
+It's very annoying because types don't match between dataframes
+and the sql db
 ## April 13 2026
 
 Qwen predictions are done and evaluated. Image processing yields 11 years mae, while QWEN3 yields 16 years of mae (both on test set).
