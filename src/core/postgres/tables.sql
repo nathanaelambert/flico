@@ -134,6 +134,7 @@ CREATE TABLE machine_learning_photo (
     is_date_train BOOLEAN,
 
     sig_lip_vect_n VECTOR(768), --embedding of 320px pic
+    sig_lip_vect_o VECTOR(768), --embedding of full res pic
     reg_n_pred_date INT, --date predicted by SVR 50 on latent space of siglip encoding with 320px input
 
     qwen3_pred_date INT, --date predicted by QWEN 3 with 320px input (for benchmarking image pipeline)
