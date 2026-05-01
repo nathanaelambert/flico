@@ -14,7 +14,10 @@ def learn_to_date(flickr_photos: pd.DataFrame):
     db.use_for_date(valid_dates)
     #   embeddings
     date_embeddings = date.embedding.siglip(db.flickr_mlphoto_to_embed())
-    db.update_siglip(date_embeddings)
+    db.update_ml_photo(date_embeddings, 'sig_lip_vect_n')
+    # benchmark
+    benchmark_predictions = date.benchmark.qwen3(db.flickr_mlphoto_with_date_pred())
+    db.update_ml_photo(benchmark_predictions, 'qwen3_pred_date')
     #   regression
     # TODO
     # store model somewhere
@@ -42,8 +45,8 @@ if __name__ == "__main__":
     db.rm_data_ml_photo('is_date_train')
     db.rm_data_ml_photo('is_date_test')
     
-    # flickr_photos = db.flickr_photo()
-    # learn_to_date(flickr_photos)
+    flickr_photos = db.flickr_photo()
+    learn_to_date(flickr_photos)
 
     # """
     # start the app

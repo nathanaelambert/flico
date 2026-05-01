@@ -1,8 +1,6 @@
 from sqlalchemy import text
 import pandas as pd
-import pandera.pandas as pa
 
-import src.core.schema as schema
 
 from src.core.db import get_engine
 from src.utils.format import large_number_for_display

@@ -25,7 +25,10 @@ def flickr_mlphoto_to_embed() -> pd.DataFrame:
         WHERE MLP.sig_lip_vect_n IS NULL
         AND MLP.is_date_test IS TRUE OR MLP.is_date_train IS TRUE --TODO remove this line later
     """)
-    return pd.read_sql_query(query, get_engine("trainer"))
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
+
 
 def flickr_mlphoto_with_date_pred() -> pd.DataFrame:
     query = text("""--sql
@@ -34,7 +37,9 @@ def flickr_mlphoto_with_date_pred() -> pd.DataFrame:
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.descr_pred_date IS NOT NULL
     """)
-    return pd.read_sql_query(query, get_engine("trainer"))
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
 
 def _mark_photo(df: pd.DataFrame):
     """
@@ -74,34 +79,63 @@ def use_for_date(df: pd.DataFrame) -> None:
     df_train = df_train.assign(is_date_train=True, is_date_test=False)
     df_test = df_test.assign(is_date_train=False, is_date_test=True)
     df_merged = pd.concat([df_train, df_test]).sort_index()
-    update_is_date_train(df_merged)
-    update_column('is_date_test')(df_merged)
+    update_ml_photo(df_merged, 'is_date_train')
+    update_ml_photo(df_merged, 'is_date_test')
 
-def update_siglip(df):
+# def update_siglip(df):
+#     update_stmt = (
+#         update(ml_photo_table)
+#         .where(ml_photo_table.c.owner_nsid == bindparam("b_owner_nsid")
+#         and ml_photo_table.c.id == bindparam("b_id"))
+#         .values(sig_lip_vect_n=bindparam("sig_lip_vect_n"))
+#     )
+#     df_renamed = df[['owner_nsid', 'id', 'sig_lip_vect_n']].rename(columns={'owner_nsid': 'b_owner_nsid', 'id': 'b_id'})
+#     with get_engine("trainer").begin() as conn:
+#         result = conn.execute(update_stmt, df_renamed.to_dict('records'))
+#         conn.commit()
+#     print(f"Updated column {'sig_lip_vect_n'} : {result.rowcount} rows affected.")
+
+# def update_is_date_train(df):
+#     update_stmt = (
+#         update(ml_photo_table)
+#         .where(ml_photo_table.c.owner_nsid == bindparam("b_owner_nsid")
+#         and ml_photo_table.c.id == bindparam("b_id"))
+#         .values(is_date_train=bindparam("is_date_train"))
+#     )
+#     df_renamed = df[['owner_nsid', 'id', 'is_date_train']].rename(columns={'owner_nsid': 'b_owner_nsid', 'id': 'b_id'})
+#     with get_engine("trainer").begin() as conn:
+#         result = conn.execute(update_stmt, df_renamed.to_dict('records'))
+#         conn.commit()
+#     print(f"Updated column {'is_date_train'} : {result.rowcount} rows affected.")
+
+# def update_qwen3(df):
+#     update_stmt = (
+#         update(ml_photo_table)
+#         .where(ml_photo_table.c.owner_nsid == bindparam("b_owner_nsid")
+#         and ml_photo_table.c.id == bindparam("b_id"))
+#         .values(qwen3_pred_date=bindparam("qwen3_pred_date"))
+#     )
+#     df_renamed = df[['owner_nsid', 'id', 'qwen3_pred_date']].rename(columns={'owner_nsid': 'b_owner_nsid', 'id': 'b_id'})
+#     with get_engine("trainer").begin() as conn:
+#         result = conn.execute(update_stmt, df_renamed.to_dict('records'))
+#         conn.commit()
+#     print(f"Updated column {'qwen3_pred_date'} : {result.rowcount} rows affected.")
+
+def update_ml_photo(df: pd.DataFrame, target_col: str):
+    """Update single column in ml_photo_table using df with PK + target_col"""
+    if df.empty:
+        print(f"No rows modified for column '{target_col}' (DataFrame empty)")
+        return
     update_stmt = (
         update(ml_photo_table)
-        .where(ml_photo_table.c.owner_nsid == bindparam("b_owner_nsid")
-        and ml_photo_table.c.id == bindparam("b_id"))
-        .values(sig_lip_vect_n=bindparam("sig_lip_vect_n"))
+        .where(ml_photo_table.c.owner_nsid == bindparam("b_owner_nsid"), ml_photo_table.c.id == bindparam("b_id"))
+        .values(**{target_col: bindparam(target_col)})
     )
-    df_renamed = df[['owner_nsid', 'id', 'sig_lip_vect_n']].rename(columns={'owner_nsid': 'b_owner_nsid', 'id': 'b_id'})
+    df_renamed = df.rename(columns={'owner_nsid': 'b_owner_nsid','id': 'b_id'})[['b_owner_nsid', 'b_id', target_col]]
+    # print(f"{c.BLUE} {df_renamed.columns.tolist()} {c.RESET}")
     with get_engine("trainer").begin() as conn:
         result = conn.execute(update_stmt, df_renamed.to_dict('records'))
-        conn.commit()
-    print(f"Updated column {'sig_lip_vect_n'} : {result.rowcount} rows affected.")
-
-def update_is_date_train(df):
-    update_stmt = (
-        update(ml_photo_table)
-        .where(ml_photo_table.c.owner_nsid == bindparam("b_owner_nsid")
-        and ml_photo_table.c.id == bindparam("b_id"))
-        .values(is_date_train=bindparam("is_date_train"))
-    )
-    df_renamed = df[['owner_nsid', 'id', 'is_date_train']].rename(columns={'owner_nsid': 'b_owner_nsid', 'id': 'b_id'})
-    with get_engine("trainer").begin() as conn:
-        result = conn.execute(update_stmt, df_renamed.to_dict('records'))
-        conn.commit()
-    print(f"Updated column {'is_date_train'} : {result.rowcount} rows affected.")
+    print(f"Updated column '{target_col}' : {result.rowcount} rows affected.")
 
 
 
@@ -109,53 +143,47 @@ def update_is_date_train(df):
 
 
 
-
-
-
-
-def update_column(column_name: str) -> Callable[[pd.DataFrame], None]:
-    """Creates column updater with schema validation"""
-    if column_name not in schema.MLPhoto.to_schema().columns:
-        raise ValueError(f"Unknown column: {column_name}")
-    col = schema.MLPhoto.to_schema().columns[column_name]
-    field_schema = schema.MLPhoto.to_schema().columns[column_name]
-    def ml_photo_updater(df: pd.DataFrame) -> None:
-        required_cols = ['owner_nsid', 'id', column_name]
-        missing = [col for col in required_cols if col not in df.columns]
-        if missing:
-            raise ValueError(f"Missing columns: {missing}")
-        series_schema = pa.SeriesSchema(
-            dtype=col.dtype,
-            nullable=getattr(col, 'nullable', False),
-            coerce=getattr(col, 'coerce', False),
-            checks=getattr(col, 'checks', []),
-        )
-        validated_values = series_schema.validate(df[column_name])
-        update_df = df[required_cols[:-1]].copy()  # owner_nsid, id
-        update_df['value'] = validated_values
-        print(f"{c.BLUE} {validated_values} {c.RESET}")
-        affected = 0
-        for _, row in update_df.iterrows():
-            with get_engine('trainer').connect() as conn:
-                result = conn.execute(text(f"""--sql
-                    UPDATE machine_learning_photo 
-                    SET {column_name} = :value
-                    WHERE owner_nsid = :owner_nsid AND id = :id
-                """)
-                , {
-                    'value': row['value'],
-                    'owner_nsid': row['owner_nsid'],
-                    'id': row['id']
-                })
-                affected += result.rowcount
-                conn.commit()
-        print(f"Wrote data in column {column_name}. {affected} rows affected")
-    return ml_photo_updater
+# def update_column(column_name: str) -> Callable[[pd.DataFrame], None]:
+#     """Creates column updater with schema validation"""
+#     if column_name not in schema.MLPhoto.to_schema().columns:
+#         raise ValueError(f"Unknown column: {column_name}")
+#     col = schema.MLPhoto.to_schema().columns[column_name]
+#     field_schema = schema.MLPhoto.to_schema().columns[column_name]
+#     def ml_photo_updater(df: pd.DataFrame) -> None:
+#         required_cols = ['owner_nsid', 'id', column_name]
+#         missing = [col for col in required_cols if col not in df.columns]
+#         if missing:
+#             raise ValueError(f"Missing columns: {missing}")
+#         series_schema = pa.SeriesSchema(
+#             dtype=col.dtype,
+#             nullable=getattr(col, 'nullable', False),
+#             coerce=getattr(col, 'coerce', False),
+#             checks=getattr(col, 'checks', []),
+#         )
+#         validated_values = series_schema.validate(df[column_name])
+#         update_df = df[required_cols[:-1]].copy()  # owner_nsid, id
+#         update_df['value'] = validated_values
+#         print(f"{c.BLUE} {validated_values} {c.RESET}")
+#         affected = 0
+#         for _, row in update_df.iterrows():
+#             with get_engine('trainer').connect() as conn:
+#                 result = conn.execute(text(f"""--sql
+#                     UPDATE machine_learning_photo 
+#                     SET {column_name} = :value
+#                     WHERE owner_nsid = :owner_nsid AND id = :id
+#                 """)
+#                 , {
+#                     'value': row['value'],
+#                     'owner_nsid': row['owner_nsid'],
+#                     'id': row['id']
+#                 })
+#                 affected += result.rowcount
+#                 conn.commit()
+#         print(f"Wrote data in column {column_name}. {affected} rows affected")
+#     return ml_photo_updater
     
 def rm_data_ml_photo(column_name: str) -> None:
     """removes data from a column (only use when testing)"""
-    if column_name not in schema.MLPhoto.to_schema().columns:
-        raise ValueError(f"Unknown column: {column_name}")
     affected = 0
     with get_engine('trainer').connect() as conn:
         result = conn.execute(text(f"""--sql
