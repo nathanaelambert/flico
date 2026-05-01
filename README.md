@@ -56,7 +56,8 @@ ADD column_name datatype;
 
 
 # Dev logs
-
+## May 1 2026
+database read and write seems to work
 ## April 29 2026
 I'm trying to fix the sqlalchemy interface with the db
 It's very annoying because types don't match between dataframes
