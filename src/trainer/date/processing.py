@@ -1,9 +1,6 @@
 import pandas as pd
-import pandera.pandas as pa
-from pandera.typing import DataFrame
-from src.core.schema import PhotoId, Photo
 
-def filter(photos: DataFrame[Photo]) -> DataFrame[PhotoId]:
+def filter(photos: pd.DataFrame) -> pd.DataFrame:
     """This code is responsible for providing a balanced dataset with accurate dates.
     The main problem encoutered so far (march 31st 2026) is identifying and filtering out
     pictures with innacurate date_taken. A lot of old pictures scanned or aquired in the 2000s
@@ -16,7 +13,7 @@ def filter(photos: DataFrame[Photo]) -> DataFrame[PhotoId]:
     # filtering the british library because all their dates are 2013 (unreliable dates)
     filtered_df = filtered_df[filtered_df['owner_nsid'] != '12403504@N02']
     df_500 = _sample_by_year(filtered_df, 500)
-    return df_500[['owner_nsid', 'id']]
+    return df_500
 
 def _sample_by_year(df, max_per_year=500):
     """
