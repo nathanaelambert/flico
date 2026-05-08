@@ -56,6 +56,10 @@ ADD column_name datatype;
 
 
 # Dev logs
+## May 8th 2026
+Sampling second best low granularity after 2000 is not enough.
+Almost every single pic after 2000 has granularity 0.
+
 ## May 6 2026
 DB is down for some reason. 
 
@@ -63,8 +67,8 @@ TODO:
 - [] add columns (is_geo_test BOOLEAN, is_geo_train BOOLEAN) to db
 - [] incorporate regression in pipeline
 - [] have working predictor
-- [] retrain using 2nd best accuracy for post 2000 pics
-- [] look manually into the new dataset
+- [x] retrain using 2nd best accuracy for post 2000 pics
+- [x] look manually into the new dataset
 - [] if error too high use predictor as flag
 - [] add columns for prediction by other models
 - [] compare perfs with other aggregations method
