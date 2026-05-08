@@ -13,7 +13,7 @@ from src.core.decorator import memoize
 def flickr_photo() -> pd.DataFrame:
     query = text("""--sql
         SELECT * FROM photo
-        LIMIT 10 --TODO remove this line later
+        --LIMIT 10 --TODO remove this line later
     """)
     return pd.read_sql_query(query, get_engine("trainer"))
 
