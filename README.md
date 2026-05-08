@@ -56,6 +56,21 @@ ADD column_name datatype;
 
 
 # Dev logs
+## May 6 2026
+DB is down for some reason. 
+
+TODO:
+- [] add columns (is_geo_test BOOLEAN, is_geo_train BOOLEAN) to db
+- [] incorporate regression in pipeline
+- [] have working predictor
+- [] retrain using 2nd best accuracy for post 2000 pics
+- [] look manually into the new dataset
+- [] if error too high use predictor as flag
+- [] add columns for prediction by other models
+- [] compare perfs with other aggregations method
+- [] write description parser
+- [] description pred date evaluate against metadata
+- [] 
 ## May 1 2026
 database read and write seems to work
 ## April 29 2026
