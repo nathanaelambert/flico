@@ -2,10 +2,19 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, callback, callback_context
-from src.server.db import photos, benchmark_photos
+from src.server.db import photos, benchmark_photos, new_granularity_photos
 
-# df = photos()
-df = benchmark_photos()
+evaluation = 3
+
+if evaluation == 1:
+    df = photos()
+    df = df.set_index(['true_date', 'reg_n_pred_date']).sort_index()
+elif evaluation == 2:
+    df = benchmark_photos()
+    df = df.set_index(['true_date', 'qwen3_pred_date']).sort_index()
+elif evaluation == 3: 
+    df = new_granularity_photos()
+    df = df.set_index(['true_date', 'true_date']).sort_index()
 
 app = Dash(__name__)
 app.layout = html.Div([
@@ -13,8 +22,6 @@ app.layout = html.Div([
     html.Div(id="image_grid", style={'flex': 1, 'display': 'flex', 'flexDirection': 'row', 'flexWrap': 'wrap'}),
 ], style={'display': 'flex', 'flexDirection': 'row'})
 
-df = df.set_index(['true_date', 'reg_n_pred_date']).sort_index()
-# df = df.set_index(['true_date', 'qwen3_pred_date']).sort_index()
 
 
 @callback(

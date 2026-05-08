@@ -2,6 +2,7 @@ import seaborn as sns
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import numpy as np
 
 EXPORT_FOLDER = "../../exported_plots/"
 
@@ -72,6 +73,46 @@ def plot_confusion_between_prediction_and_true_value(df, display=True, column='r
         fig.show()
     # fig.write_html(EXPORT_FOLDER + "plot_confusion_between_prediction_and_true_value.html")
     return fig
+
+def plot_granularity(df):
+    df['year'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year
+    year_stats = df.groupby('year')['date_taken_granularity'].agg(['mean', 'std', 'count']).reset_index()
+    year_stats['error'] = year_stats['std'] / np.sqrt(year_stats['count'])  # Standard error
+    
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=year_stats['year'],
+            y=year_stats['mean'],
+            name='Granularity Mean',
+            marker_color='darkorange',
+            opacity=0.8,
+            error_y=dict(
+                type='data',
+                array=year_stats['error'],
+                visible=True,
+                color='black',
+                thickness=1,
+                width=3
+            )
+        )
+    )
+    
+    fig.update_layout(
+        xaxis_title="Year",
+        yaxis_title="Granularity (Mean ± SEM)",
+        title="Dating granularity by Year (8 = circa, 6 = year, 4 = month, 0 = second)",
+        xaxis_tickangle=45
+    )
+    
+    fig.update_xaxes(
+        tickmode='linear',
+        tick0=df['year'].min() // 10 * 10,
+        dtick=10
+    )
+    
+    fig.show()
+
 
 def _add_x_equal_y_line(fig):
     fig.add_shape(
