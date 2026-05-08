@@ -133,7 +133,7 @@ CREATE TABLE machine_learning_photo (
     is_date_test BOOLEAN,
     is_date_train BOOLEAN,
 
-    is_geo_test BOOLEAN,
+    is_geo_test BOOLEAN, --not yet added to remote
     is_geo_train BOOLEAN,
 
     sig_lip_vect_n VECTOR(768), --embedding of 320px pic
