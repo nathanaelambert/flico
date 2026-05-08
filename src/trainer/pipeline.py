@@ -12,16 +12,16 @@ def learn_to_date(flickr_photos: pd.DataFrame):
     #   initial filtering and sampling
     valid_dates = date.processing.filter(flickr_photos)
     db.use_for_date(valid_dates)
-    #   embeddings
+    # embeddings
     date_embeddings = date.embedding.siglip(db.flickr_mlphoto_to_embed())
     db.update_ml_photo(date_embeddings, 'sig_lip_vect_n')
     # benchmark
     benchmark_predictions = date.benchmark.qwen3(db.flickr_mlphoto_with_date_pred())
     db.update_ml_photo(benchmark_predictions, 'qwen3_pred_date')
-    #   regression
+    # regression
     # TODO
     # store model somewhere
-    #   prediction
+    # prediction
 
     
 
@@ -29,10 +29,13 @@ def learn_to_locate(flickr_photos: pd.DataFrame):
     # GEO PIPELINE
     #   initial filtering and sampling
     valid_geo = geo.processing.filter(flickr_photos)
-    # db.use_for_geo(valid_geo)
-    #   @Ghassan add pipeline steps
-    #   clustering
-
+    db.use_for_geo(valid_geo)
+    # clustering images
+    cluster_ids = geo.clustering.vision_and_keywords(db.flickr_photo_to_cluster())
+    db.update_ml_photo(cluster_ids, 'geo_cluster_id')
+    # aggregating clusters metadata
+    clusters = geo.clustering.metadata(clusters_id)
+    db.save_clusters(clusters)
 
 def predict_date(photo: pd.DataFrame) -> List[int]:
     pass

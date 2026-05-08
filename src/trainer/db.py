@@ -23,11 +23,23 @@ def flickr_mlphoto_to_embed() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.sig_lip_vect_n IS NULL
-        AND MLP.is_date_test IS TRUE OR MLP.is_date_train IS TRUE --TODO remove this line later
+        AND MLP.is_date_test IS TRUE OR MLP.is_date_train IS TRUE --TODO remove this line later ?
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
     return df
+
+def flickr_photo_to_cluster() -> pd.DataFrame:
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        WHERE MLP.geo_cluster_id IS NULL
+        AND MLP.is_geo_test IS TRUE OR MLP.is_geo_train IS TRUE --TODO remove this line later ?
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df 
 
 
 def flickr_mlphoto_with_date_pred() -> pd.DataFrame:
@@ -41,6 +53,14 @@ def flickr_mlphoto_with_date_pred() -> pd.DataFrame:
     df = df.loc[:, ~df.columns.duplicated()]
     return df
 
+def _psql_insert_ignore(table, conn, keys, data_iter):
+    # because there is no built-in pd.to_sql parameter for ON CONFLICT DO NOTHING
+    data = [dict(zip(keys, row)) for row in data_iter]
+    stmt = insert(table.table).values(data)
+    stmt = stmt.on_conflict_do_nothing(index_elements=['owner_nsid', 'id'])
+    result = conn.execute(stmt)
+    return result.rowcount
+
 def _mark_photo(df: pd.DataFrame):
     """
     creates entries in machine_learning_photo 
@@ -48,13 +68,6 @@ def _mark_photo(df: pd.DataFrame):
     'photo' with flickr metadata and 'machine_learning photo' with predcitions, internal params
     this separation is motivated by two things:
     1. protect flickr metadata 2. work with a lighter table (only copy useful pics)"""
-    def _psql_insert_ignore(table, conn, keys, data_iter):
-        # because there is no built-in pd.to_sql parameter for ON CONFLICT DO NOTHING
-        data = [dict(zip(keys, row)) for row in data_iter]
-        stmt = insert(table.table).values(data)
-        stmt = stmt.on_conflict_do_nothing(index_elements=['owner_nsid', 'id'])
-        result = conn.execute(stmt)
-        return result.rowcount
     df[['owner_nsid', 'id']].to_sql(
         name='machine_learning_photo',
         con=get_engine('trainer'),
@@ -64,13 +77,24 @@ def _mark_photo(df: pd.DataFrame):
         chunksize=1000
     )
 
+def save_clusters(df: pd.DataFrame):
+    df.to_sql(
+        name='geo_cluster',
+        con=get_engine('trainer'),
+        if_exists='append',
+        index=False,
+        method=_psql_insert_signore,
+        chunksize=1000
+    )
+
 def use_for_geo(df: pd.DataFrame) -> None:
-    df_pks = df[["owner_nsid", "id"]]
-    _mark_photo(df_pks)
-    # TODO 
-    # Mark flags in db: (sql update)
-    # geo_valid_set = True
-    pass
+    _mark_photo(df)
+    df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
+    df_train = df_train.assign(is_date_train=True, is_date_test=False)
+    df_test = df_test.assign(is_date_train=False, is_date_test=True)
+    df_merged = pd.concat([df_train, df_test]).sort_index()
+    update_ml_photo(df_merged, 'is_geo_train')
+    update_ml_photo(df_merged, 'is_geo_test')
 
 def use_for_date(df: pd.DataFrame) -> None:
     """Split data and bulk update train/test flags."""
