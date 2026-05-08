@@ -12,10 +12,13 @@ ml_photo_table = Table(
     Column("id", BigInteger, primary_key=True),
     Column("geo_cluster_id", Integer),
     
-    Column("is_test_set", Boolean),  # deprecated
+    Column("is_test_set", Boolean),  # deprecated ?
 
     Column("is_date_test", Boolean),
     Column("is_date_train", Boolean),
+
+    Column("is_geo_test", Boolean),
+    Column("is_geo_train", Boolean),
 
     Column("sig_lip_vect_n", VECTOR(768)),
     Column("sig_lip_vect_o", VECTOR(768)),
