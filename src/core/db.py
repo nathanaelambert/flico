@@ -10,26 +10,31 @@ import src.utils.colors as c
 
 
 @memoize
-def get_engine(user: Literal["trainer", "crawler", "server", "dev"]):
+def get_engine(user: Literal["trainer", "crawler", "server", "dev"], local=True):
     """Returns SQLAlchemy engine. Connect services to postgres db"""
     if user not in ["trainer", "crawler", "server", "dev"]:
         raise ValueError(f"Invalid user: {user}")
     
     load_dotenv()
-    password_var = f"PWD{user.upper()}"
+    password_var = f"LOCAL_PWD{user.upper()}" if local else f"PWD{user.upper()}"
+    db_var = 'LOCAL_PGDATABASE' if local else 'PGDATABASE'
+    host_var = 'LOCAL_PGHOST' if local else 'PGHOST'
+    port_var = 'LOCAL_PGPORT' if local else 'PGPORT'
     password = os.getenv(password_var)
-    db = os.getenv('PGDATABASE')
-
+    db = os.getenv(db_var)
+    host = os.getenv(host_var)
+    port = os.getenv(port_var)
     if not password:
         raise ValueError(f"{c.RED}Password not found for env var: {password_var}{c.RESET}")
     if not db:
-        raise ValueError(f"{c.RED}Database name not found. {c.RESET}Check env var: PGDATABSE")
+        raise ValueError(f"{c.RED}Database not found for env var: {db_var}{c.RESET}")
+    if not host:
+        raise ValueError(f"{c.RED}Host not found for env var: {host_var}{c.RESET}")
+    if not port_var:
+        raise ValueError(f"{c.RED}Port not found for env var: {port_var}{c.RESET}")
     
-    connection_string = (
-        f"postgresql+psycopg2://{user}:{password}"
-        f"@{os.getenv('PGHOST')}:{os.getenv('PGPORT', '5432')}"
-        f"/{db}"
-    )
+    connection_string = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}"
+    
     try:
         engine = create_engine(connection_string, echo=False)
         @event.listens_for(engine, "connect")
