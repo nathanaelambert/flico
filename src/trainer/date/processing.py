@@ -19,6 +19,7 @@ def _sample_by_year(df, max_per_year=500):
     """
     Sample max_per_year photos for each year prioritizing:
     1. Lowest granularity first (take all until limit reached)
+    1.1 Except for pictures after 2000, second lowest granularity first
     2. Maximum uniform owner distribution in the critical granularity level
 
     Granularity is supposed to be a precision indicator of the metadata
@@ -28,13 +29,26 @@ def _sample_by_year(df, max_per_year=500):
     sampled_dfs = []   
     for year, group in df.groupby('year'):
         if len(group) > max_per_year:
-            sampled = sampled = _sample_uniform_low_granularity(group, max_per_year)
+            if year < 2000:
+                sampled = _sample_uniform_low_granularity(group, max_per_year)
+            else:
+                sampled = _sample_uniform_punished_granularity(group, max_per_year)
             sampled_dfs.append(sampled)
         else:
             sampled_dfs.append(group)  
     sampled_df = pd.concat(sampled_dfs, ignore_index=True)
     print(f"Sampled {len(sampled_df):,} photos spanning {int(sampled_df['year'].min())}–{int(sampled_df['year'].max())}")
     return sampled_df
+
+def _sample_uniform_punished_granularity(year_group, max_per_year):
+    year_group['date_taken_granularity'] = year_group['date_taken_granularity'].apply(_punish_low_granularity)
+    return _sample_uniform_low_granularity(year_group, max_per_year)
+
+def _punish_low_granularity(granularity: int) -> int:
+    if granularity == 0:
+        return 10
+    else:
+        return granularity
 
 def _sample_uniform_low_granularity(year_group, max_per_year):
     sampled = []
