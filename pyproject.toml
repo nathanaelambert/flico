@@ -31,7 +31,7 @@ dependencies = [
     "ipykernel",
     "openai",
     "asyncio",
-    "pandera"
+    "huggingface_hub",
 ]
 
 [tool.setuptools.packages.find]
