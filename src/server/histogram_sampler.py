@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, callback, callback_context
 from src.server.db import photos, benchmark_photos, new_granularity_photos
 
-evaluation = 3
+evaluation = 1
 
 if evaluation == 1:
     df = photos()
