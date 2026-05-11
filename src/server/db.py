@@ -5,6 +5,13 @@ import pandas as pd
 from src.core.db import get_engine
 from src.utils.format import large_number_for_display
 
+def flickr_photo() -> pd.DataFrame:
+    query = text("""--sql
+        SELECT * FROM photo
+        --LIMIT 10 --TODO remove this line later
+    """)
+    return pd.read_sql_query(query, get_engine("trainer"))
+
 def count_flickr():
     query = text("""--sql
         WITH grouped_counts AS (
