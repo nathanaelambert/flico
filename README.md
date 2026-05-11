@@ -56,15 +56,33 @@ ADD column_name datatype;
 
 
 # Dev logs
+## May 11th 2026
+pushed svr eregression model to Hugging Face
+I won't retrain it.
+Code for training might be slightly broken??
+
+## May 9th 2026
+Crawling again because db is down. Receiving lots of 504.
+Focusing on descriptions now. 
+- Will look manually for date patterns in decriptions,
+- check that the pattern makes sense from 
+then validate them by checking in the db if they 
 ## May 8th 2026
 Sampling second best low granularity after 2000 is not enough.
 Almost every single pic after 2000 has granularity 0.
-
+```--sql
+SELECT COUNT(*)
+FROM public.photo
+WHERE date_taken >= '2018-01-01'::timestamp
+  AND date_taken < '2019-01-01'::timestamp
+  AND date_taken_granularity > 0;
+```
+-> 55
 ## May 6 2026
 DB is down for some reason. 
 
 TODO:
-- [] add columns (is_geo_test BOOLEAN, is_geo_train BOOLEAN) to db
+- [x] add columns (is_geo_test BOOLEAN, is_geo_train BOOLEAN) to db
 - [] incorporate regression in pipeline
 - [] have working predictor
 - [x] retrain using 2nd best accuracy for post 2000 pics
