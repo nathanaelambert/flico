@@ -1,0 +1,3 @@
+[submodule "flickr-filtering"]
+	path = flickr-filtering
+	url = https://github.com/ghassanbaroudi/flickr-filtering
