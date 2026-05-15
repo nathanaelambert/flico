@@ -56,17 +56,22 @@ ADD column_name datatype;
 
 
 # Dev logs
+## May 14th 2026
+saved by description : https://www.flickr.com/photos/109550159@N08/28207251966
+only image can help : https://www.flickr.com/photos/costicaacsinte/27625457603/in/photostream/
+
+
+description extractor is garbage for some reason. IDk why though. 
 ## May 11th 2026
-pushed svr eregression model to Hugging Face
+pushed svr regression model to Hugging Face
 I won't retrain it.
 Code for training might be slightly broken??
 
 ## May 9th 2026
 Crawling again because db is down. Receiving lots of 504.
 Focusing on descriptions now. 
-- Will look manually for date patterns in decriptions,
-- check that the pattern makes sense from 
-then validate them by checking in the db if they 
+- [x] Will look manually for date patterns in decriptions,
+- [x] validate them by counting occurences in the db if the db 
 ## May 8th 2026
 Sampling second best low granularity after 2000 is not enough.
 Almost every single pic after 2000 has granularity 0.
@@ -83,16 +88,17 @@ DB is down for some reason.
 
 TODO:
 - [x] add columns (is_geo_test BOOLEAN, is_geo_train BOOLEAN) to db
-- [] incorporate regression in pipeline
-- [] have working predictor
+- [x] incorporate regression in pipeline
+- [x] have working predictor
 - [x] retrain using 2nd best accuracy for post 2000 pics
 - [x] look manually into the new dataset
-- [] if error too high use predictor as flag
-- [] add columns for prediction by other models
-- [] compare perfs with other aggregations method
 - [] write description parser
-- [] description pred date evaluate against metadata
-- [] 
+- [] agrregating algo (description + image + metadata)
+- [] evaluate aggregating algo manually
+- [] create perfect training dataset
+- [] add columns for prediction by other models
+- [] train new models on perfect dataset
+
 ## May 1 2026
 database read and write seems to work
 ## April 29 2026

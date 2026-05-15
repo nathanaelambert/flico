@@ -83,6 +83,8 @@ def qwen3(df_test: pd.DataFrame) -> pd.DataFrame:
     df_test['year'] = pd.to_datetime(df_test['date_taken'], errors='coerce').dt.year
     df_test = df_test[df_test['year'] <= 1999]
     df = df_test[df_test['qwen3_pred_date'].isna()]
+    if len(df) == 0:
+        return df
     df['qwen3_pred_date'] = df['url_n'].apply(_predict_qwen3)
     print(f"\n{c.RESET}", flush=True)
     # print(f"{c.GREEN} {df}{c.RESET}")

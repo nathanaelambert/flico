@@ -2,9 +2,9 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, callback, callback_context
-from src.server.db import photos, benchmark_photos, new_granularity_photos
+from src.server.db import photos, benchmark_photos, new_granularity_photos, description_photos
 
-evaluation = 1
+evaluation = 4
 
 if evaluation == 1:
     df = photos()
@@ -15,6 +15,10 @@ elif evaluation == 2:
 elif evaluation == 3: 
     df = new_granularity_photos()
     df = df.set_index(['true_date', 'true_date']).sort_index()
+elif evaluation == 4: 
+    df = description_photos()
+    print(f"comparing {len(df)} pictures (description vs metadata)")
+    df = df.set_index(['true_date', 'descr_pred_date']).sort_index() ##IS BROKENNNN WHY CAN?T HE FIND THE DATES
 
 app = Dash(__name__)
 app.layout = html.Div([
@@ -77,11 +81,13 @@ def sample(clickData):
         true_date = row.get('true_date', true_year)
         pred_date = row.get('reg_n_pred_date', pred_year)
         qwen_date = row.get('qwen3_pred_date', 'no qwen date')
+        desc_date = row.get('descr_pred_date', 'no desc date')
         
         image_card = html.Div([
             html.A(f"{title}", href=row.get('page_url', '')),
             html.P(f"Date label  (metadata): {true_date}"),
             html.P(f"Predicted (siglip+svr): {pred_date}"),
+            html.P(f"Extracted from descrip: {desc_date}"),
             html.P(f"Baseline       (Qwen3): {qwen_date}"),
             html.P(f"From: {institution}"),
             html.Img(src=row.get('url_n', ''), style={'width': '100%', 'height': 'auto'})
