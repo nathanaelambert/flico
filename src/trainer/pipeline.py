@@ -31,8 +31,6 @@ def learn_to_date(flickr_photos: pd.DataFrame):
     date_predictions = date.regression.svr50_predictions(df)
     db.update_ml_photo(date_predictions, 'reg_n_pred_date')
 
-    
-
 def learn_to_locate(flickr_photos: pd.DataFrame):
     # GEO PIPELINE
     #   initial filtering and sampling
@@ -45,27 +43,43 @@ def learn_to_locate(flickr_photos: pd.DataFrame):
     clusters = geo.clustering.metadata(clusters_id)
     db.save_clusters(clusters)
 
-def predict_date(photos: pd.DataFrame) -> List[int]:
-    db.use_for_date(photos)
-    to_embedd = db.flickr_mlphoto_to_embed().merge(photos[['owner_nsid', 'id']], on= ['owner_nsid', 'id'], how='inner')
+def predict_date_visual():
+    db.mark_photo(photos)
+    to_embedd = db.flickr_mlphoto_to_embed()
     date_embeddings = date.embedding.siglip(to_embedd)
     db.update_ml_photo(date_embeddings, 'sig_lip_vect_n')
     to_predict = db.flickr_photo_to_predict().merge(photos[['owner_nsid', 'id']], on= ['owner_nsid', 'id'], how='inner')
     date_predictions = date.regression.svr50_predictions(to_predict)
     db.update_ml_photo(date_predictions, 'reg_n_pred_date')
 
+def predict_date_description():
+    to_predict = db.flickr_mlphoto_with_date_pred()
+    print(f"Predicting dates for {len(to_predict)} pictures.")
+    predictions = date.description.predictions(to_predict)
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_colwidth', None)
+    pd.set_option('display.width', None)
+    pd.set_option('display.expand_frame_repr', False)
+    predictions['page'] = predictions.apply(lambda r : f"https://www.flickr.com/photos/{r['owner_nsid']}/{r['id']}", axis=1 )
+    predictions['year'] = pd.to_datetime(predictions['date_taken'], errors='coerce').dt.year
+    predictions["diff"] = (predictions["year"] - predictions["descr_pred_date"]).abs()
+    predictions = predictions.sort_values("diff", ascending=False).drop(columns="diff")
+    print(predictions[['reg_n_pred_date','descr_score', 'descr_pred_date', 'year', 'page']].head(50))
+    predictions= predictions.dropna(subset=['descr_pred_date'])
+    db.update_ml_photo(predictions, 'descr_pred_date')
+    # db.mark_photo(to_predict)
 
 def predict_geo(photo: pd.DataFrame) -> List[tuple[float, float]]:
     pass
 
 if __name__ == "__main__":    
-    # db.rm_data_ml_photo('is_date_train')
-    # db.rm_data_ml_photo('is_date_test')
 
 
     # slow (loads millions of pics)
-    flickr_photos = db.flickr_photo()
-    predict_date(flickr_photos)
+    #flickr_photos = db.flickr_photo()
+    db.rm_data_ml_photo('descr_pred_date')
+    predict_date_description()
     # date.description.explore()
     
     # learn_to_date(flickr_photos)

@@ -30,6 +30,9 @@ def _siglip_embedding(url):
 
 def siglip(df: pd.DataFrame)-> pd.DataFrame: 
     """Encode images URL with SigLIP model"""
+    df = df[df['sig_lip_vect_n'].isna()]
+    if len(df) == 0:
+        return df
     df['sig_lip_vect_n'] = df['url_n'].apply(_siglip_embedding)
     print(f"\n{c.RESET}", flush=True)
     return df

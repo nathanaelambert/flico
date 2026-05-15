@@ -18,7 +18,7 @@ model_path = hf_hub_download(
     filename="svr50_siglip320_model.joblib"
 )
 svr_model = joblib.load(model_path)
-print(f"Model loaded successfully!{c.GREY}")
+print(f"Model loaded successfully!{c.RESET}")
 
 def svr50_predictions(df: pd.DataFrame)-> pd.DataFrame:
     """ predicts dates from siglip embedding using SVR trained model"""

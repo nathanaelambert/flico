@@ -13,7 +13,7 @@ from src.core.decorator import memoize
 def flickr_photo() -> pd.DataFrame:
     query = text("""--sql
         SELECT * FROM photo
-        LIMIT 10 --TODO remove this line later
+        --LIMIT 30 --TODO remove this line later
     """)
     return pd.read_sql_query(query, get_engine("trainer"))
 
@@ -57,7 +57,17 @@ def flickr_mlphoto_with_date_pred() -> pd.DataFrame:
         SELECT * FROM photo AS P
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
-        WHERE MLP.descr_pred_date IS NOT NULL
+        WHERE MLP.reg_n_pred_date IS NOT NULL
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
+
+def flickr_mlphoto() -> pd.DataFrame:
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
@@ -71,7 +81,7 @@ def _psql_insert_ignore(table, conn, keys, data_iter):
     result = conn.execute(stmt)
     return result.rowcount
 
-def _mark_photo(df: pd.DataFrame):
+def mark_photo(df: pd.DataFrame):
     """
     creates entries in machine_learning_photo 
     photo table is split into two tables:
@@ -98,7 +108,7 @@ def save_clusters(df: pd.DataFrame):
     )
 
 def use_for_geo(df: pd.DataFrame) -> None:
-    _mark_photo(df)
+    mark_photo(df)
     df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
     df_train = df_train.assign(is_date_train=True, is_date_test=False)
     df_test = df_test.assign(is_date_train=False, is_date_test=True)
@@ -108,7 +118,7 @@ def use_for_geo(df: pd.DataFrame) -> None:
 
 def use_for_date(df: pd.DataFrame) -> None:
     """Split data and bulk update train/test flags."""
-    _mark_photo(df)
+    mark_photo(df)
     df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
     df_train = df_train.assign(is_date_train=True, is_date_test=False)
     df_test = df_test.assign(is_date_train=False, is_date_test=True)
