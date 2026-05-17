@@ -13,7 +13,7 @@ def predictions(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
     results = df.apply(
-        lambda row: _predict_date(row['description'], row['title'], row['date_upload_year']), 
+        lambda row: _predict_date(row['description'], row['title'], row['date_upload_year'], row['owner_nsid']), 
         axis=1
     )
     df[["descr_pred_date", "descr_score"]] = pd.DataFrame(results.tolist(), index=df.index)
@@ -22,6 +22,7 @@ def predictions(df: pd.DataFrame) -> pd.DataFrame:
 def isSerial(word: str) -> bool:
     if '_' in word:
         return True
+    word = re.sub(r'[\[\]()]', '', word)
     if '-' in word:
         parts = word.split('-')
     elif '.' in word:
@@ -43,7 +44,7 @@ def isSerial(word: str) -> bool:
     """
         
 
-def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Optional[int], int]: 
+def _predict_date(description: str, title: str, date_uploaded: int, owner_nsid: str) -> tuple[Optional[int], int]: 
     """
     Assigns a score to each candidate date (4 consecutive digits) in the description and title based on ad hoc patterns.
     Return dates with the best score, average amongst candidates to break ties.
@@ -56,14 +57,19 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
                 'start': m.start(), 'end': m.end(),
             } 
             for line in text.splitlines()
-            for sentence in re.split(r'\. |; |\? |: |, |—|>|<', line)
+            for sentence in re.split(r'\.\s+|; |\? |, |—|>|<|\.\. |\.\.\. |\.(?=$)', line)
             for word in sentence.split(' ')
             for m in re.finditer(r'(?<![A-Za-z0-9_])[12]\d{3}(?![0-9])', word)
         ]
     
     description = re.sub(r'(?<!\d)(\d{3})?-\?', r'\g<1>5', description) # Optional: approximate decade to midpoint
+    description = re.sub(r'(?<=\s)[Nn]o\.? ', 'Number', description)
+    description = re.sub(r'(?<=\s)[Rr]ef\.? ', 'Reference', description)
+    description = re.sub(r'(?<=\s)[cC]a?\.', 'Circa ', description)
+    description = re.sub(r'\d{3} - LEFT', 'garbage', description)
+    if owner_nsid == "99115493@N08":
+        return None, 0 # WikiSinaloa has a bad habbit of having a stupid 4 digit number as title
 
-    
     all_matches = [
         {**m, 'source': 'description'} for m in _extract_candidate_with_context(description or "")
     ] + [
@@ -90,11 +96,15 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
         'has_date_on_line': 28 if 'date' in m['line'].lower() else 0,
         'has_year_on_line': 28 if 'year' in m['line'].lower() else 0,
         'probable_range': 30 * np.exp(-((1925 - m['year']) ** 2) / (2 * 150 ** 2)),
+        'circa': 6 if 'circa' in m['sentence'].lower() else 0,
         # punish negative patterns
         'serial_numbers' : -80 if isSerial(m['word']) else 0,
-        'PX': -40 if 'PX' in m['line'] else 0,
-        'number': -50 if 'number' in m['line'].lower() else 0,
+        'PX': -40 if 'PX' in m['sentence'] else 0,
+        'CO': -40 if 'CO' in m['sentence'] else 0, 
+        'ref': -40 if 'ref' in m['sentence'].lower() else 0,
+        'number': -50 if any(pat in m['sentence'].lower() for pat in ['number', 'call']) else 0,
         "dollar": -50 if '$' in m['sentence'] else 0,
+        "street": -40 if any(pat in m['sentence'].lower() for pat in['street', 'avenue', 'road']) else 0,
 
 
         #Navy Medicine is annoying with their stupid meaning less titles that look like dates
@@ -112,15 +122,15 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
 
     if not scored_matches:
         return None, 0
-
+    # DEBUG PRINT -----------------------------------
+    # if "Postcard. Mt Ngauruhoe, from Ruapehu, N.I.M.T Rly. Photo by H Winkelmann. F T series no. 1179. Printed in England [ca 1905-1914]." in title:
+    #     print(f"{c.BLUE} {scored_matches} {c.RESET}")
+    # END DEBUG PRINT -------------------------------
     top_scored = max(scored_matches, key=lambda x: x['total_score'])
-    if top_scored['total_score'] < 5:
+    if top_scored['total_score'] < 0:
         return None, top_scored['total_score']
     top_matches = [m for m in scored_matches if m['total_score'] == top_scored['total_score']]
     top_years = sorted({m['match']['year'] for m in top_matches})
-    if "The elements of forestry, designed to afford information concerning the planting and care of forest trees for ornament or profit and giving suggestions upon the creation" in title:
-        print(f"{c.BLUE} {top_matches} {c.RESET}")
-
     prdy =  top_years[0] if len(top_years) == 1 else int(round(mean(top_years)))
     return int(prdy), top_scored['total_score']
 """
