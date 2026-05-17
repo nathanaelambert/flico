@@ -56,7 +56,7 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
                 'start': m.start(), 'end': m.end(),
             } 
             for line in text.splitlines()
-            for sentence in re.split(r'\. |; |\? |: |, |—', line)
+            for sentence in re.split(r'\. |; |\? |: |, |—|>|<', line)
             for word in sentence.split(' ')
             for m in re.finditer(r'(?<![A-Za-z0-9_])[12]\d{3}(?![0-9])', word)
         ]
