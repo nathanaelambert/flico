@@ -4,6 +4,7 @@ from collections import defaultdict, Counter
 from statistics import mean
 from typing import Optional
 import numpy as np
+import src.utils.colors as c
 
 def predictions(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
@@ -33,7 +34,7 @@ def isSerial(word: str) -> bool:
         return False
     return len(parts) > 3 or not all(
         any(re.match(pattern, part) 
-            for pattern in [r'^[12]\d{3}$', r'^\d{1}$', r'^[012]\d{1}$', r''])
+            for pattern in [r'^[12]\d{3}$', r'^\d{1}$', r'^[012]\d{1}$', r'^$'])
             for part in parts
     )
     """
@@ -62,6 +63,7 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
     
     description = re.sub(r'(?<!\d)(\d{3})?-\?', r'\g<1>5', description) # Optional: approximate decade to midpoint
 
+    
     all_matches = [
         {**m, 'source': 'description'} for m in _extract_candidate_with_context(description or "")
     ] + [
@@ -74,17 +76,19 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
 
     patterns = lambda m, years: {
         # reward positive patterns
-        'end_of_line': max(0, 20 - (len(m['line']) - m['end'])),
-        'start_of_line': max(0, 15 - m['start']),
-        'bracket_before': 23 if m['line'][max(0, m['start'] - 2):m['start']].endswith(('[', '[ ')) else 0,
-        'bracket_after': 24 if m['line'][m['end']:min(len(m['line']), m['end'] + 2)].startswith((']', ' ]')) else 0,
-        'parenth_before': 12 if m['line'][max(0, m['start'] - 2):m['start']].endswith(('(', '( ')) else 0,
-        'parenth_after': 13 if m['line'][m['end']:min(len(m['line']), m['end'] + 2)].startswith((')', ' )')) else 0,
+        # 'end_of_line': max(0, 20 - (len(m['line']) - m['end'])),
+        # 'start_of_line': max(0, 15 - m['start']), #must fix indexes because they are word relative
+
+        'bracket_before': 13 if m['word'].endswith(']') else 0,
+        'bracket_after': 14 if m['word'].startswith('[') else 0,
+        'parenth_before': 7 if m['word'].endswith(')') else 0,
+        'parenth_after': 8 if m['word'].startswith('(') else 0,
         'single_on_line': 10 if (dates := re.findall(r'\d{4}', m['line'])) and len(dates) == 1 and dates[0] == str(m['year']) else 0,
         'in_title': 5 if m.get('source') == 'title' else 0,
-        'has_smaller_in_description': 8 if years and m['year'] > min(years) else 0,
-        'has_bigger_in_description': 8 if years and m['year'] < max(years) else 0,
-        'has_date_on_line': 21 if 'date' in m['line'].lower() else 0,
+        'has_smaller_in_description': 6 if years and m['year'] > min(years) else 0,
+        'has_bigger_in_description': 6 if years and m['year'] < max(years) else 0,
+        'has_date_on_line': 28 if 'date' in m['line'].lower() else 0,
+        'has_year_on_line': 28 if 'year' in m['line'].lower() else 0,
         'probable_range': 30 * np.exp(-((1925 - m['year']) ** 2) / (2 * 150 ** 2)),
         # punish negative patterns
         'serial_numbers' : -80 if isSerial(m['word']) else 0,
@@ -114,6 +118,8 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
         return None, top_scored['total_score']
     top_matches = [m for m in scored_matches if m['total_score'] == top_scored['total_score']]
     top_years = sorted({m['match']['year'] for m in top_matches})
+    if "The elements of forestry, designed to afford information concerning the planting and care of forest trees for ornament or profit and giving suggestions upon the creation" in title:
+        print(f"{c.BLUE} {top_matches} {c.RESET}")
 
     prdy =  top_years[0] if len(top_years) == 1 else int(round(mean(top_years)))
     return int(prdy), top_scored['total_score']
