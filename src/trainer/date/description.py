@@ -18,6 +18,29 @@ def predictions(df: pd.DataFrame) -> pd.DataFrame:
     df[["descr_pred_date", "descr_score"]] = pd.DataFrame(results.tolist(), index=df.index)
     return df
 
+def isSerial(word: str) -> bool:
+    if '_' in word:
+        return True
+    if '-' in word:
+        parts = word.split('-')
+    elif '.' in word:
+        parts = word.split('.')
+    elif '/' in word:
+        parts = word.split('/')
+    else:
+        return False
+    if any(re.match(r'^[12]\d{2}s$', part) for part in parts):
+        return False
+    return len(parts) > 3 or not all(
+        any(re.match(pattern, part) 
+            for pattern in [r'^[12]\d{3}$', r'^\d{1}$', r'^[012]\d{1}$', r''])
+            for part in parts
+    )
+    """
+    errors: 
+    "Eph-E-DRAMA-1899-01." -> True
+    """
+        
 
 def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Optional[int], int]: 
     """
@@ -28,15 +51,16 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
     def _extract_candidate_with_context(text):
         return [
             {   'year': int(m.group()), 'full_text': text,
-                'line': line, 'sentence': sentence, 
+                'line': line, 'sentence': sentence, 'word': word,
                 'start': m.start(), 'end': m.end(),
             } 
             for line in text.splitlines()
-            for sentence in line.split('. ')
-            for m in re.finditer(r'(?<![0-9])\d{4}(?![0-9])', sentence)
+            for sentence in re.split(r'\. |; |\? |: |, |—', line)
+            for word in sentence.split(' ')
+            for m in re.finditer(r'(?<![A-Za-z0-9_])[12]\d{3}(?![0-9])', word)
         ]
     
-    # description = re.sub(r'(?<!\d)(\d{3})\?', r'\g<1>5', description) # Optional: approximate decade to midpoint
+    description = re.sub(r'(?<!\d)(\d{3})?-\?', r'\g<1>5', description) # Optional: approximate decade to midpoint
 
     all_matches = [
         {**m, 'source': 'description'} for m in _extract_candidate_with_context(description or "")
@@ -52,8 +76,8 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
         # reward positive patterns
         'end_of_line': max(0, 20 - (len(m['line']) - m['end'])),
         'start_of_line': max(0, 15 - m['start']),
-        'bracket_before': 13 if m['line'][max(0, m['start'] - 2):m['start']].endswith(('[', '[ ')) else 0,
-        'bracket_after': 14 if m['line'][m['end']:min(len(m['line']), m['end'] + 2)].startswith((']', ' ]')) else 0,
+        'bracket_before': 23 if m['line'][max(0, m['start'] - 2):m['start']].endswith(('[', '[ ')) else 0,
+        'bracket_after': 24 if m['line'][m['end']:min(len(m['line']), m['end'] + 2)].startswith((']', ' ]')) else 0,
         'parenth_before': 12 if m['line'][max(0, m['start'] - 2):m['start']].endswith(('(', '( ')) else 0,
         'parenth_after': 13 if m['line'][m['end']:min(len(m['line']), m['end'] + 2)].startswith((')', ' )')) else 0,
         'single_on_line': 10 if (dates := re.findall(r'\d{4}', m['line'])) and len(dates) == 1 and dates[0] == str(m['year']) else 0,
@@ -63,10 +87,19 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
         'has_date_on_line': 21 if 'date' in m['line'].lower() else 0,
         'probable_range': 30 * np.exp(-((1925 - m['year']) ** 2) / (2 * 150 ** 2)),
         # punish negative patterns
-        #'punish_serial_number': -100 if re.search(r'\d{5}', m['line']) else 0,  #will also punish https://www.flickr.com/photos/61270229@N05/51938374036
-        #'punish_serial_url': -80 if '\\' in m['line'] else 0, #will also punish https://www.flickr.com/photos/61270229@N05/51938374036
-        'underscore_before': -30 if m['line'][max(0, m['start'] - 2):m['start']].endswith('_') else 0,
-        'underscore_after': -30 if m['line'][m['end']:min(len(m['line']), m['end'] + 2)].startswith('_') else 0,
+        'serial_numbers' : -80 if isSerial(m['word']) else 0,
+        'PX': -40 if 'PX' in m['line'] else 0,
+        'number': -50 if 'number' in m['line'].lower() else 0,
+        "dollar": -50 if '$' in m['sentence'] else 0,
+
+
+        #Navy Medicine is annoying with their stupid meaning less titles that look like dates
+        # https://www.flickr.com/photos/61270229@N05/54791908741
+        # 'punish_serial_number': -100 if re.search(r'\d{5}', m['sentence']) else 0,
+        #'punish_serial_number_0': -100 if re.search(r'(?<![0-9]0\d{1})', m['sentence']) else 0,
+        # 'punish_serial_url': -100 if '/' in m['line']  and '.' in m['line'] else 0, 
+        #'underscore_before': -30 if m['line'][max(0, m['start'] - 2):m['start']].endswith('_') else 0,
+        #'underscore_after': -30 if m['line'][m['end']:min(len(m['line']), m['end'] + 2)].startswith('_') else 0,
     }
 
     years_in_desc = [m['year'] for m in all_matches if m['source'] == 'description']
@@ -85,6 +118,27 @@ def _predict_date(description: str, title: str, date_uploaded: int) -> tuple[Opt
     prdy =  top_years[0] if len(top_years) == 1 else int(round(mean(top_years)))
     return int(prdy), top_scored['total_score']
 """
+Technically returns the wrong date, but I will do  nothing about it:
+https://www.flickr.com/photos/134017397@N03/26282016448 "Aug. 24 1003" -> 1003
+https://www.flickr.com/photos/47290943@N03/48749615926  "NLI Ref: POOLEWP 1008" -> 1008
+https://www.flickr.com/photos/150408343@N02/34585529631 "1017 - LEFT" -> 1017
+https://www.flickr.com/photos/164711667@N06/54200824785 "1033 Lenore Street, Lansing" -> 1033
+https://www.flickr.com/photos/29454428@N08/6940033955   "ca.1883-1930s, PXE 1028," -> 1028
+
+
+Is also a failure but I have good reasons to keep it:
+https://www.flickr.com/photos/61270229@N05/49362869843  "NOB (NH)-KWST 1077." -> 1077 (other date looks like context)
+
+
+
+
+
+
+
+
+
+
+
 FAILED ON (RETURNED WRONG DATE):
 https://www.flickr.com/photos/61270229@N05/54793754139
 https://www.flickr.com/photos/134017397@N03/54151877913 ??
@@ -92,12 +146,9 @@ https://www.flickr.com/photos/134017397@N03/54151877913 ??
 
 https://www.flickr.com/photos/32605636@N06/54787514482 ( hdl.handle.net/10462/deriv/0000. -> 0)
 https://www.flickr.com/photos/61270229@N05/52865270141 ( NAMRU San Antonio attends Fiesta San Antonio Activities 230424-N-ND850-0001 -> 1)
-FAILED ON (RETURNED NONE OR WASN'T PROCESSED)
-https://www.flickr.com/photos/108745105@N04/14549510857
 
 
-RETURNS NONE AND IS OKAY:
-https://www.flickr.com/photos/twm_news/5161430838/in/photostream/
+
 """
 
 """
