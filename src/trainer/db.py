@@ -11,35 +11,62 @@ from src.core.decorator import memoize
 
 
 def flickr_photo() -> pd.DataFrame:
+    """Every picture in the db"""
     query = text("""--sql
         SELECT * FROM photo
-        --LIMIT 30 --TODO remove this line later
     """)
     return pd.read_sql_query(query, get_engine("trainer"))
 
-def flickr_mlphoto_to_embed() -> pd.DataFrame:
+def photo_to_embed_with_siglip() -> pd.DataFrame:
+    """Photos that need a sig_lip_vect_n embedding."""
     query = text("""--sql
         SELECT * FROM photo AS P
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.sig_lip_vect_n IS NULL
-        AND MLP.is_date_test IS TRUE OR MLP.is_date_train IS TRUE --TODO remove this line later ?
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
     return df
 
-def flickr_photo_to_cluster() -> pd.DataFrame:
+def photo_to_embed_with_clip() -> pd.DataFrame:
+    """Photos that need a clip_vect_224 embedding."""
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        WHERE MLP.clip_vect_224 IS NULL
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    return df.loc[:, ~df.columns.duplicated()]
+
+def photo_to_find_buildings() -> pd.DataFrame:
+    """Photos with clip embedding that need to be labeled as building or non-building"""
     query = text("""--sql
         SELECT * FROM photo AS P
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
-        WHERE MLP.geo_cluster_id IS NULL
-        AND MLP.is_geo_test IS TRUE OR MLP.is_geo_train IS TRUE --TODO remove this line later ?
+        WHERE MLP.clip_vect_224 IS NOT NULL
+        AND MLP.is_building IS NULL
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
+
+def photo_of_building_to_cluster() -> pd.DataFrame:
+    """Photos of buildings that need to be clustered into geographical proximity"""
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        WHERE MLP.is_building IS TRUE
+        AND MLP.geo_cluster_id IS NULL
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
     return df 
+
+
 
 def flickr_photo_to_predict() -> pd.DataFrame:
     query = text("""--sql
@@ -103,7 +130,7 @@ def save_clusters(df: pd.DataFrame):
         con=get_engine('trainer'),
         if_exists='append',
         index=False,
-        method=_psql_insert_signore,
+        method=_psql_insert_ignore,
         chunksize=1000
     )
 
