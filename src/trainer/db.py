@@ -17,18 +17,7 @@ def flickr_photo() -> pd.DataFrame:
     """)
     return pd.read_sql_query(query, get_engine("trainer"))
 
-def photo_to_embed_with_siglip() -> pd.DataFrame:
-    """Photos that need a sig_lip_vect_n embedding."""
-    query = text("""--sql
-        SELECT * FROM photo AS P
-        JOIN machine_learning_photo AS MLP 
-        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
-        WHERE MLP.sig_lip_vect_n IS NULL
-    """)
-    df = pd.read_sql_query(query, get_engine("trainer"))
-    df = df.loc[:, ~df.columns.duplicated()]
-    return df
-
+# ---------------------geo pipeline ---------------------------------
 def photo_to_embed_with_clip() -> pd.DataFrame:
     """Photos that need a clip_vect_224 embedding."""
     query = text("""--sql
@@ -40,7 +29,7 @@ def photo_to_embed_with_clip() -> pd.DataFrame:
     df = pd.read_sql_query(query, get_engine("trainer"))
     return df.loc[:, ~df.columns.duplicated()]
 
-def photo_to_find_buildings() -> pd.DataFrame:
+def photo_to_label_as_building() -> pd.DataFrame:
     """Photos with clip embedding that need to be labeled as building or non-building"""
     query = text("""--sql
         SELECT * FROM photo AS P
@@ -53,7 +42,7 @@ def photo_to_find_buildings() -> pd.DataFrame:
     df = df.loc[:, ~df.columns.duplicated()]
     return df
 
-def photo_of_building_to_cluster() -> pd.DataFrame:
+def photo_to_dbscan() -> pd.DataFrame:
     """Photos of buildings that need to be clustered into geographical proximity"""
     query = text("""--sql
         SELECT * FROM photo AS P
@@ -61,12 +50,26 @@ def photo_of_building_to_cluster() -> pd.DataFrame:
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.is_building IS TRUE
         AND MLP.geo_cluster_id IS NULL
+        AND P.latitude IS NOT NULL
+        AND P.longitude IS NOT NULL
+        AND P.latitude  != 0
+        AND P.longitude != 0
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    return df.loc[:, ~df.columns.duplicated()]
+
+# ---------------------date pipeline ---------------------------------
+def photo_to_embed_with_siglip() -> pd.DataFrame:
+    """Photos that need a sig_lip_vect_n embedding."""
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        WHERE MLP.sig_lip_vect_n IS NULL
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
-    return df 
-
-
+    return df
 
 def flickr_photo_to_predict() -> pd.DataFrame:
     query = text("""--sql
@@ -100,6 +103,17 @@ def flickr_mlphoto() -> pd.DataFrame:
     df = df.loc[:, ~df.columns.duplicated()]
     return df
 
+def use_for_date(df: pd.DataFrame) -> None:
+    """Split data and bulk update train/test flags."""
+    mark_photo(df)
+    df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
+    df_train = df_train.assign(is_date_train=True, is_date_test=False)
+    df_test = df_test.assign(is_date_train=False, is_date_test=True)
+    df_merged = pd.concat([df_train, df_test]).sort_index()
+    update_ml_photo(df_merged, 'is_date_train')
+    update_ml_photo(df_merged, 'is_date_test')
+
+# ---------------------read/write miscalneous ---------------------------------
 def _psql_insert_ignore(table, conn, keys, data_iter):
     # because there is no built-in pd.to_sql parameter for ON CONFLICT DO NOTHING
     data = [dict(zip(keys, row)) for row in data_iter]
@@ -113,8 +127,7 @@ def mark_photo(df: pd.DataFrame):
     creates entries in machine_learning_photo 
     photo table is split into two tables:
     'photo' with flickr metadata and 'machine_learning photo' with predcitions, internal params
-    this separation is motivated by two things:
-    1. protect flickr metadata 2. work with a lighter table (only copy useful pics)"""
+    this separation is done in order to protect original flickr metadata"""
     df[['owner_nsid', 'id']].to_sql(
         name='machine_learning_photo',
         con=get_engine('trainer'),
@@ -124,34 +137,58 @@ def mark_photo(df: pd.DataFrame):
         chunksize=1000
     )
 
-def save_clusters(df: pd.DataFrame):
-    df.to_sql(
-        name='geo_cluster',
-        con=get_engine('trainer'),
-        if_exists='append',
-        index=False,
-        method=_psql_insert_ignore,
-        chunksize=1000
+def update_ml_photo(df: pd.DataFrame, target_col: str):
+    """Update single column in ml_photo_table using df with PK + target_col"""
+    if df.empty:
+        print(f"No rows modified for column '{target_col}' (DataFrame empty)")
+        return
+    update_stmt = (
+        update(ml_photo_table)
+        .where(ml_photo_table.c.owner_nsid == bindparam("b_owner_nsid"), ml_photo_table.c.id == bindparam("b_id"))
+        .values(**{target_col: bindparam(target_col)})
     )
+    df_renamed = df.rename(columns={'owner_nsid': 'b_owner_nsid','id': 'b_id'})[['b_owner_nsid', 'b_id', target_col]]
+    # print(f"{c.BLUE} {df_renamed.columns.tolist()} {c.RESET}")
+    with get_engine("trainer").begin() as conn:
+        result = conn.execute(update_stmt, df_renamed.to_dict('records'))
+    print(f"Updated column '{target_col}' : {result.rowcount} rows affected.")
 
-def use_for_geo(df: pd.DataFrame) -> None:
-    mark_photo(df)
-    df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
-    df_train = df_train.assign(is_date_train=True, is_date_test=False)
-    df_test = df_test.assign(is_date_train=False, is_date_test=True)
-    df_merged = pd.concat([df_train, df_test]).sort_index()
-    update_ml_photo(df_merged, 'is_geo_train')
-    update_ml_photo(df_merged, 'is_geo_test')
 
-def use_for_date(df: pd.DataFrame) -> None:
-    """Split data and bulk update train/test flags."""
-    mark_photo(df)
-    df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
-    df_train = df_train.assign(is_date_train=True, is_date_test=False)
-    df_test = df_test.assign(is_date_train=False, is_date_test=True)
-    df_merged = pd.concat([df_train, df_test]).sort_index()
-    update_ml_photo(df_merged, 'is_date_train')
-    update_ml_photo(df_merged, 'is_date_test')
+def rm_data_ml_photo(column_name: str) -> None:
+    """removes data from a column (only use when testing)"""
+    affected = 0
+    with get_engine('trainer').connect() as conn:
+        result = conn.execute(text(f"""--sql
+            UPDATE machine_learning_photo 
+            SET {column_name} = NULL
+            WHERE {column_name} is not NULL
+        """))
+        affected += result.rowcount
+        conn.commit()
+    print(f"Removed data in column {column_name}. {affected} rows affected")
+        
+    
+
+
+
+# def save_clusters(df: pd.DataFrame):
+#     df.to_sql(
+#         name='geo_cluster',
+#         con=get_engine('trainer'),
+#         if_exists='append',
+#         index=False,
+#         method=_psql_insert_ignore,
+#         chunksize=1000
+#     )
+
+# def use_for_geo(df: pd.DataFrame) -> None:
+#     mark_photo(df)
+#     df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
+#     df_train = df_train.assign(is_date_train=True, is_date_test=False)
+#     df_test = df_test.assign(is_date_train=False, is_date_test=True)
+#     df_merged = pd.concat([df_train, df_test]).sort_index()
+#     update_ml_photo(df_merged, 'is_geo_train')
+#     update_ml_photo(df_merged, 'is_geo_test')
 
 # def update_siglip(df):
 #     update_stmt = (
@@ -191,23 +228,6 @@ def use_for_date(df: pd.DataFrame) -> None:
 #         result = conn.execute(update_stmt, df_renamed.to_dict('records'))
 #         conn.commit()
 #     print(f"Updated column {'qwen3_pred_date'} : {result.rowcount} rows affected.")
-
-def update_ml_photo(df: pd.DataFrame, target_col: str):
-    """Update single column in ml_photo_table using df with PK + target_col"""
-    if df.empty:
-        print(f"No rows modified for column '{target_col}' (DataFrame empty)")
-        return
-    update_stmt = (
-        update(ml_photo_table)
-        .where(ml_photo_table.c.owner_nsid == bindparam("b_owner_nsid"), ml_photo_table.c.id == bindparam("b_id"))
-        .values(**{target_col: bindparam(target_col)})
-    )
-    df_renamed = df.rename(columns={'owner_nsid': 'b_owner_nsid','id': 'b_id'})[['b_owner_nsid', 'b_id', target_col]]
-    # print(f"{c.BLUE} {df_renamed.columns.tolist()} {c.RESET}")
-    with get_engine("trainer").begin() as conn:
-        result = conn.execute(update_stmt, df_renamed.to_dict('records'))
-    print(f"Updated column '{target_col}' : {result.rowcount} rows affected.")
-
 
 
 
@@ -252,19 +272,5 @@ def update_ml_photo(df: pd.DataFrame, target_col: str):
 #                 conn.commit()
 #         print(f"Wrote data in column {column_name}. {affected} rows affected")
 #     return ml_photo_updater
-    
-def rm_data_ml_photo(column_name: str) -> None:
-    """removes data from a column (only use when testing)"""
-    affected = 0
-    with get_engine('trainer').connect() as conn:
-        result = conn.execute(text(f"""--sql
-            UPDATE machine_learning_photo 
-            SET {column_name} = NULL
-            WHERE {column_name} is not NULL
-        """))
-        affected += result.rowcount
-        conn.commit()
-    print(f"Removed data in column {column_name}. {affected} rows affected")
-        
     
 
