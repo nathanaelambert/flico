@@ -1,9 +1,9 @@
-[submodule "flickr-filtering"]
-	path = flickr-filtering
-	url = https://github.com/ghassanbaroudi/flickr-filtering
-[submodule "research_project"]
-	path = research_project
-	url = https://github.com/Amine-Zouzou/research_project
-[submodule "flickr-project"]
-	path = flickr-project
-	url = https://github.com/kimoal276/flickr-project
+# [submodule "flickr-filtering"]
+# 	path = flickr-filtering
+# 	url = https://github.com/ghassanbaroudi/flickr-filtering
+# [submodule "research_project"]
+# 	path = research_project
+# 	url = https://github.com/Amine-Zouzou/research_project
+# [submodule "flickr-project"]
+# 	path = flickr-project
+# 	url = https://github.com/kimoal276/flickr-project
