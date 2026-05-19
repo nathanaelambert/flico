@@ -122,37 +122,28 @@ CREATE TABLE photo (
 CREATE TABLE machine_learning_photo (
     PRIMARY KEY (owner_nsid, id),
     FOREIGN KEY (owner_nsid, id) REFERENCES photo(owner_nsid, id),
-    FOREIGN KEY (geo_cluster_id) REFERENCES geo_cluster(id),
     
     id BIGINT,
     owner_nsid TEXT,
-    geo_cluster_id INT,
+
+    geo_cluster_id INT, -- a cluster is a group of pictures of buildings in the same geographical area
+    is_building   BOOLEAN, -- if the image represents a building or not
+    p_building DOUBLE PRECISION; -- probability that img is a building. softmax P(class-0 = building), range [0.0, 1.0]
+    
+    geo_group_id INT, -- TODO a group is 
+    geo_group_matching_ratio DOUBLE PRECISION, -- TODO (how much the image fits with the group 0: not at all, 1: perfectly)
    
-    is_test_set BOOLEAN, --deprecated
 
-    is_date_test BOOLEAN,
-    is_date_train BOOLEAN,
-
-    is_geo_test BOOLEAN, --not yet added to remote
-    is_geo_train BOOLEAN,
 
     sig_lip_vect_n VECTOR(768), --embedding of 320px pic
     sig_lip_vect_o VECTOR(768), --embedding of full res pic
+    clip_vect_224  VECTOR(512), -- OpenCLIP ViT-B-32 L2-normalised embedding of cropped square pic
+
+    is_date_train BOOLEAN, -- was used to train date predictor from picture
+    is_date_test BOOLEAN, -- was used to evaluate date predictor from picture
     reg_n_pred_date INT, --date predicted by SVR 50 on latent space of siglip encoding with 320px input
-
     qwen3_pred_date INT, --date predicted by QWEN 3 with 320px input (for benchmarking image pipeline)
-
     descr_pred_date INT  --date predicted by NLP algo reading the text description
 
+    is_test_set BOOLEAN, --deprecated
 );
-
-CREATE TABLE geo_cluster (
-    id INT PRIMARY KEY,
-    min_latitude DOUBLE PRECISION,
-    avg_latitude DOUBLE PRECISION,
-    max_latitude DOUBLE PRECISION,
-    min_longitude DOUBLE PRECISION,
-    avg_longitude DOUBLE PRECISION,
-    max_longitude DOUBLE PRECISION
-);
-
