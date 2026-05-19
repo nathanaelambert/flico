@@ -3,7 +3,42 @@ from typing import List
 import src.trainer.db as db
 import src.server.db as server_db
 import src.trainer.date as date
-import src.trainer.geo as geo
+
+import flickr-filtering-db-integration as filtering
+
+def pipeline():
+    print(f"Getting all pictures from the database...")
+    all_pics = db.flickr_photo()
+    print(f"Found {len(all_pics)} pictures.\n Preparing table...")
+    db.mark_photo(all_pics)
+    
+    # geo pipeline
+    print(f"Looking for pics needing a clip embedding...")
+    need_clip = db.photo_to_embed_with_clip()
+    print(f"Found {len(need_siglip)} pictures. \n Generating embeddings...")
+    db.update_ml_photo(filtering.embedding.clip(need_clip), 'clip_vect_224')
+    print(f"Looking for pics needing a building label...")
+    need_label = db.photo_to_label_as_building()
+    print(f"Found {len(need_label)} pictures. \n Labeling buidings and non-buildings...")
+    labeled = filtering.clustering.building_label(need_label)
+    db.update_ml_photo(labeled, 'is_building')
+    db.update_ml_photo(labeled, 'p_building')
+    print(f"Looking for pics needing geographical clustering...")
+    need_clustering = db.photo_to_dbscan()
+    print(f"Found {len(need_clustering)} pictures. \n Clustering buildings of same geographical area (DBSCAN)...")
+    db.update_ml_photo(filtering.clustering.cluster_id(need_clustering), 'geo_cluster_id')
+
+
+
+
+    # date pipeline
+    print(f"Looking for pics needing a siglip embedding...")
+    need_siglip = db.photo_to_embed_with_siglip()
+    print(f"Found {len(need_siglip)} pictures. \n Generating embeddings...")
+    db.update_ml_photo(date.embedding.siglip(need_siglip), 'sig_lip_vect_n')
+
+
+
 
 
 
@@ -32,16 +67,8 @@ def learn_to_date(flickr_photos: pd.DataFrame):
     db.update_ml_photo(date_predictions, 'reg_n_pred_date')
 
 def learn_to_locate(flickr_photos: pd.DataFrame):
-    # GEO PIPELINE
-    #   initial filtering and sampling
-    valid_geo = geo.processing.filter(flickr_photos)
-    db.use_for_geo(valid_geo)
-    # clustering images
-    cluster_ids = geo.clustering.vision_and_keywords(db.flickr_photo_to_cluster())
-    db.update_ml_photo(cluster_ids, 'geo_cluster_id')
-    # aggregating clusters metadata
-    clusters = geo.clustering.metadata(clusters_id)
-    db.save_clusters(clusters)
+
+
 
 def predict_date_visual():
     db.mark_photo(photos)
@@ -70,16 +97,15 @@ def predict_date_description():
     db.update_ml_photo(predictions, 'descr_pred_date')
     # db.mark_photo(to_predict)
 
-def predict_geo(photo: pd.DataFrame) -> List[tuple[float, float]]:
-    pass
 
 if __name__ == "__main__":    
+    pipeline()
 
 
     # slow (loads millions of pics)
     #flickr_photos = db.flickr_photo()
-    db.rm_data_ml_photo('descr_pred_date')
-    predict_date_description()
+    # db.rm_data_ml_photo('descr_pred_date')
+    # predict_date_description()
     # date.description.explore()
     
     # learn_to_date(flickr_photos)
