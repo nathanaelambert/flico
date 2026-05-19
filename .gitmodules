@@ -7,3 +7,6 @@
 # [submodule "flickr-project"]
 # 	path = flickr-project
 # 	url = https://github.com/kimoal276/flickr-project
+[submodule "flickr-filtering-db-integration"]
+	path = flickr-filtering-db-integration
+	url = https://github.com/ghassanbaroudi/flickr-filtering-db-integration
