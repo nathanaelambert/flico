@@ -95,6 +95,7 @@ def _predict_date(description: str, title: str, date_uploaded: int, owner_nsid: 
         'has_bigger_in_description': 6 if years and m['year'] < max(years) else 0,
         'has_date_on_line': 28 if 'date' in m['line'].lower() else 0,
         'has_year_on_line': 28 if 'year' in m['line'].lower() else 0,
+        'has_field': 30 if any(pat in m['sentence'].lower() for pat in ['produced', 'published', 'created', 'taken']) else 0,
         'probable_range': 30 * np.exp(-((1925 - m['year']) ** 2) / (2 * 150 ** 2)),
         'circa': 6 if 'circa' in m['sentence'].lower() else 0,
         # punish negative patterns
@@ -102,18 +103,10 @@ def _predict_date(description: str, title: str, date_uploaded: int, owner_nsid: 
         'PX': -40 if 'PX' in m['sentence'] else 0,
         'CO': -40 if 'CO' in m['sentence'] else 0, 
         'ref': -40 if 'ref' in m['sentence'].lower() else 0,
+        'donated': -50 if any(pat in m['sentence'].lower() for pat in ['donated', 'donation', 'transfer', 'loaned']) else 0 ,
         'number': -50 if any(pat in m['sentence'].lower() for pat in ['number', 'call']) else 0,
         "dollar": -50 if '$' in m['sentence'] else 0,
-        "street": -40 if any(pat in m['sentence'].lower() for pat in['street', 'avenue', 'road']) else 0,
-
-
-        #Navy Medicine is annoying with their stupid meaning less titles that look like dates
-        # https://www.flickr.com/photos/61270229@N05/54791908741
-        # 'punish_serial_number': -100 if re.search(r'\d{5}', m['sentence']) else 0,
-        #'punish_serial_number_0': -100 if re.search(r'(?<![0-9]0\d{1})', m['sentence']) else 0,
-        # 'punish_serial_url': -100 if '/' in m['line']  and '.' in m['line'] else 0, 
-        #'underscore_before': -30 if m['line'][max(0, m['start'] - 2):m['start']].endswith('_') else 0,
-        #'underscore_after': -30 if m['line'][m['end']:min(len(m['line']), m['end'] + 2)].startswith('_') else 0,
+        "street": -40 if any(pat in m['sentence'].lower() for pat in['street', 'avenue', 'road', 'location']) else 0,
     }
 
     years_in_desc = [m['year'] for m in all_matches if m['source'] == 'description']
@@ -146,80 +139,37 @@ Is also a failure but I have good reasons to keep it:
 https://www.flickr.com/photos/61270229@N05/49362869843  "NOB (NH)-KWST 1077." -> 1077 (other date looks like context)
 
 
+bro, community archives...
+https://www.flickr.com/photos/134017397@N03/28900993408 why do they put the date of donations and not the actual date
+I guess I can't blame them bc they actually use the date_taken field correctly
 
 
+this looks more like 1890 than 1930 to me.. but it's a debate
+https://www.flickr.com/photos/32605636@N06/27247106097
+
+Actually, this settles the debate:
+https://www.flickr.com/photos/32605636@N06/4762679982
+Queensland are trolling !! where did they get 1930 from ?
 
 
+difficult range to extract to to spaces
+https://www.flickr.com/photos/35740357@N03/7448555082
+also combination of circa and range is common (also, date taken is approximated by 50 years)
 
+ranges range
+https://www.flickr.com/photos/41131493@N06/34300706301
 
-
-
+TODO
+MUST IMPROVE ON RANGES (now, often takes upper bound)
+TODO
+if final year is same as other that are punished return second best or None
+TODO
+add a rule where you we take the takendate from community archives of belleville hastings
+134017397@N03
 
 FAILED ON (RETURNED WRONG DATE):
-https://www.flickr.com/photos/61270229@N05/54793754139
-https://www.flickr.com/photos/134017397@N03/54151877913 ??
+https://www.flickr.com/photos/cabhc/42876755621/in/photostream/ -> 2008
+https://www.flickr.com/photos/104959762@N04/52519816109 -> 2020
 
-
-https://www.flickr.com/photos/32605636@N06/54787514482 ( hdl.handle.net/10462/deriv/0000. -> 0)
-https://www.flickr.com/photos/61270229@N05/52865270141 ( NAMRU San Antonio attends Fiesta San Antonio Activities 230424-N-ND850-0001 -> 1)
-
-
-
-"""
-
-"""
-TO FIX :
-Predicting dates for 79373 pictures.
-       reg_n_pred_date  descr_score  descr_pred_date  year                                                     page
-78585             1942         15.0              0.0  2025   https://www.flickr.com/photos/32605636@N06/54787514482
-825               1954         15.0              0.0  2024   https://www.flickr.com/photos/32605636@N06/53485137292
-3874              1953         15.0              0.0  2024   https://www.flickr.com/photos/32605636@N06/53486458095
-3877              1936         16.0              0.0  2023   https://www.flickr.com/photos/32605636@N06/53011859441
-3875              1931         16.0              0.0  2023   https://www.flickr.com/photos/32605636@N06/53011273692
-79137             1900         15.0              0.0  2023   https://www.flickr.com/photos/32605636@N06/53346085926
-2106              1911         15.0              0.0  2023   https://www.flickr.com/photos/32605636@N06/53345206397
-3876              1965         16.0              0.0  2023   https://www.flickr.com/photos/32605636@N06/53012237850
-78794             1944         15.0              0.0  2022   https://www.flickr.com/photos/32605636@N06/51961605694
-4597              1950         15.0              0.0  2021   https://www.flickr.com/photos/32605636@N06/51502469361
-2242              2022         25.0              2.0  2022   https://www.flickr.com/photos/61270229@N05/51940361669
-15113             1919         20.0              1.0  2020   https://www.flickr.com/photos/37547255@N08/51080649478
-2589              2021         25.0              4.0  2021   https://www.flickr.com/photos/61270229@N05/51163248037
-2                 1943         25.0              1.0  2015  https://www.flickr.com/photos/201627032@N02/54118592662
-1                 1984         25.0              1.0  2015  https://www.flickr.com/photos/201627032@N02/54119904925
-14985             1971         25.0              1.0  2015  https://www.flickr.com/photos/201627032@N02/54119783074
-3843              1937         37.0             12.0  2025   https://www.flickr.com/photos/32605636@N06/54660511838
-15167             1926         31.0              8.0  2021   https://www.flickr.com/photos/37547255@N08/51081438507
-7                 2011         25.0              9.0  2021   https://www.flickr.com/photos/99115493@N08/51433527451
-4598              1945         37.0             13.0  2025   https://www.flickr.com/photos/32605636@N06/54660511823
-8                 1995         25.0             10.0  2021   https://www.flickr.com/photos/99115493@N08/51434494470
-78768             1979         16.0              5.0  2015  https://www.flickr.com/photos/124448282@N08/19750252484
-9                 1989         25.0             11.0  2021   https://www.flickr.com/photos/99115493@N08/51434494380
-12                1994         25.0             12.0  2021   https://www.flickr.com/photos/99115493@N08/51434268499
-3                 1932         31.0             11.0  2020   https://www.flickr.com/photos/37547255@N08/51081438477
-392               1966         20.0              3.0  2011    https://www.flickr.com/photos/37381115@N04/5852241847
-22                2003         25.0             13.0  2021   https://www.flickr.com/photos/99115493@N08/51434494330
-71799             1955         31.0             12.0  2019   https://www.flickr.com/photos/37547255@N08/51081347726
-24                1960         37.0             18.0  2025   https://www.flickr.com/photos/32605636@N06/54660511658
-1297              1933         37.0             20.0  2025   https://www.flickr.com/photos/32605636@N06/54660511638
-762               2000          7.0             14.0  2016  https://www.flickr.com/photos/135637350@N04/28724571814
-71800             1951         31.0             19.0  2021   https://www.flickr.com/photos/37547255@N08/51080649633
-3844              1948         37.0             24.0  2025   https://www.flickr.com/photos/32605636@N06/54660289041
-824               1948         31.0             19.0  2019   https://www.flickr.com/photos/37547255@N08/51080651053
-1006              1947         31.0             20.0  2019   https://www.flickr.com/photos/37547255@N08/51012162030
-4763              1937         24.0             21.0  2020   https://www.flickr.com/photos/37547255@N08/51080650413
-56761             2020         45.0             23.0  2021   https://www.flickr.com/photos/61270229@N05/51062860471
-3203              2015         28.0             20.0  2016  https://www.flickr.com/photos/135637350@N04/28771203304
-15307             1927         37.0             29.0  2024   https://www.flickr.com/photos/32605636@N06/53560775591
-71801             1951         31.0             25.0  2019   https://www.flickr.com/photos/37547255@N08/51080650968
-4889              1966         41.0             29.0  2022   https://www.flickr.com/photos/61270229@N05/51889826833
-71796             1911         37.0             36.0  2025   https://www.flickr.com/photos/32605636@N06/54660517689
-1772              1942         37.0             36.0  2025   https://www.flickr.com/photos/32605636@N06/54659448792
-15280             1924         37.0             36.0  2024   https://www.flickr.com/photos/32605636@N06/53559915927
-2320              1924         37.0             37.0  2025   https://www.flickr.com/photos/32605636@N06/54659448737
-361               1954         34.0             29.0  2015   https://www.flickr.com/photos/61270229@N05/29281756066
-2590              1970         33.0             38.0  2022   https://www.flickr.com/photos/61270229@N05/51989237029
-4103              1934         30.0             36.0  2019   https://www.flickr.com/photos/37547255@N08/51080650863
-12449             1971         40.0              2.0  1984   https://www.flickr.com/photos/61270229@N05/53861205198
-1482              1932         37.0             43.0  2025   https://www.flickr.com/photos/32605636@N06/54659448652
-Updated column 'descr_pred_date' : 71860 rows affected.
+https://www.flickr.com/photos/126377022@N07/20527216764 -> 1980 (Check why not 1992 (in bracket, year kw)??)
 """
