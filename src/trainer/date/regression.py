@@ -12,16 +12,15 @@ from datetime import datetime
 from huggingface_hub import hf_hub_download
 import src.utils.colors as c
 
-print(f"Loading HuggingFace model for SVR50 regression...{c.GREY}")
-model_path = hf_hub_download(
-    repo_id="nathanaelambert/svr50siglip320flico-05-2026",
-    filename="svr50_siglip320_model.joblib"
-)
-svr_model = joblib.load(model_path)
-print(f"Model loaded successfully!{c.RESET}")
-
 def svr50_predictions(df: pd.DataFrame)-> pd.DataFrame:
     """ predicts dates from siglip embedding using SVR trained model"""
+    print(f"Loading HuggingFace model for SVR50 regression...{c.GREY}")
+    model_path = hf_hub_download(
+        repo_id="nathanaelambert/svr50siglip320flico-05-2026",
+        filename="svr50_siglip320_model.joblib"
+    )
+    svr_model = joblib.load(model_path)
+    print(f"Model loaded successfully!{c.RESET}")
     X = np.stack(df['sig_lip_vect_n'].values)
     preds = svr_model.predict(X)
     df = df.copy()
