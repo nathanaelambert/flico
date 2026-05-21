@@ -25,6 +25,7 @@ def photo_to_embed_with_clip() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.clip_vect_224 IS NULL
+        LIMIT 1000
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     return df.loc[:, ~df.columns.duplicated()]
@@ -57,6 +58,18 @@ def photo_to_dbscan() -> pd.DataFrame:
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     return df.loc[:, ~df.columns.duplicated()]
+
+def photo_to_group() -> pd.DataFrame:
+    """Photos with cluster id that needs to be grouped if they are the same building"""
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        WHERE MLP.geo_cluster_id IS NOT NULL
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
 
 # ---------------------date pipeline ---------------------------------
 def photo_to_embed_with_siglip() -> pd.DataFrame:
