@@ -131,8 +131,7 @@ CREATE TABLE machine_learning_photo (
     p_building DOUBLE PRECISION; -- probability that img is a building. softmax P(class-0 = building), range [0.0, 1.0]
     
     geo_group_id INT, -- TODO a group is 
-    geo_group_matching_ratio DOUBLE PRECISION, -- TODO (how much the image fits with the group 0: not at all, 1: perfectly)
-   
+    is_central BOOLEAN, -- TODO true for the best picture of a group   
 
 
     sig_lip_vect_n VECTOR(768), --embedding of 320px pic

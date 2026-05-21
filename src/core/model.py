@@ -14,6 +14,9 @@ ml_photo_table = Table(
     Column("is_building", Boolean),
     Column("p_building", Float),
 
+    Column("geo_group_id", Integer),
+    Column("is_central", Boolean),
+
     Column("is_test_set", Boolean),  # deprecated ?
 
     Column("is_date_test", Boolean),
