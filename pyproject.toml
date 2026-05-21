@@ -20,7 +20,7 @@ dependencies = [
     "transformers",
     "Pillow",
     "requests",
-    "torch",
+    "torch>=2.0",
     "sentencepiece",
     "pgvector",
     "joblib",
@@ -32,6 +32,11 @@ dependencies = [
     "openai",
     "asyncio",
     "huggingface_hub",
+    "tqdm>=4.65",
+    "open-clip-torch>=2.24.0",
+    "opencv-python",
+    "networkx",
+    "lightglue @ git+https://github.com/cvg/LightGlue.git",
 ]
 
 [tool.setuptools.packages.find]
