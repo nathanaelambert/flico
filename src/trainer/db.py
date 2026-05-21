@@ -25,7 +25,7 @@ def photo_to_embed_with_clip() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.clip_vect_224 IS NULL
-        LIMIT 1000
+        LIMIT 100
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     return df.loc[:, ~df.columns.duplicated()]
@@ -49,8 +49,6 @@ def photo_to_dbscan() -> pd.DataFrame:
         SELECT * FROM photo AS P
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
-        WHERE MLP.is_building IS TRUE
-        AND MLP.geo_cluster_id IS NULL
         AND P.latitude IS NOT NULL
         AND P.longitude IS NOT NULL
         AND P.latitude  != 0
@@ -79,6 +77,7 @@ def photo_to_embed_with_siglip() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.sig_lip_vect_n IS NULL
+        LIMIT 10
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
@@ -164,7 +163,7 @@ def update_ml_photo(df: pd.DataFrame, target_col: str):
     # print(f"{c.BLUE} {df_renamed.columns.tolist()} {c.RESET}")
     with get_engine("trainer").begin() as conn:
         result = conn.execute(update_stmt, df_renamed.to_dict('records'))
-    print(f"Updated column '{target_col}' : {result.rowcount} rows affected.")
+    print(f"Updated column '{target_col}' : {c.GREEN}{result.rowcount}{c.RESET} rows affected.")
 
 
 def rm_data_ml_photo(column_name: str) -> None:
