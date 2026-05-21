@@ -1,3 +1,9 @@
-[submodule "flickr-filtering-db-integration"]
-	path = flickr-filtering-db-integration
+[submodule "geo_mapillary"]
+	path = geo_mapillary
+	url = https://github.com/kimoal276/flickr-project
+[submodule "geo_clustering"]
+	path = geo_clustering
 	url = https://github.com/ghassanbaroudi/flickr-filtering-db-integration
+[submodule "geo_grouping"]
+	path = geo_grouping
+	url = https://github.com/Amine-Zouzou/final_version_flickr
