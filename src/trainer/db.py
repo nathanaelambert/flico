@@ -10,14 +10,30 @@ import src.utils.colors as c
 from src.core.decorator import memoize
 
 
-def flickr_photo() -> pd.DataFrame:
+def flickr_photo_id() -> pd.DataFrame:
     """Every picture in the db"""
     query = text("""--sql
-        SELECT * FROM photo
+        SELECT *
+        id, owner_nsid FROM photo
     """)
     return pd.read_sql_query(query, get_engine("trainer"))
 
 # ---------------------geo pipeline ---------------------------------
+def photo_relevant_geo() -> pd.DataFrame:
+    """Photos that are used by geo pipeline."""
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        AND P.latitude IS NOT NULL
+        AND P.longitude IS NOT NULL
+        AND P.latitude  != 0
+        AND P.longitude != 0
+        ORDER BY RANDOM()
+        """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    return df.loc[:, ~df.columns.duplicated()]
+
 def photo_to_embed_with_clip() -> pd.DataFrame:
     """Photos that need a clip_vect_224 embedding."""
     query = text("""--sql
@@ -25,8 +41,13 @@ def photo_to_embed_with_clip() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.clip_vect_224 IS NULL
-        LIMIT 100
-    """)
+        AND P.latitude IS NOT NULL
+        AND P.longitude IS NOT NULL
+        AND P.latitude  != 0
+        AND P.longitude != 0
+        ORDER BY RANDOM()
+        LIMIT 500
+        """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     return df.loc[:, ~df.columns.duplicated()]
 
@@ -77,7 +98,6 @@ def photo_to_embed_with_siglip() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.sig_lip_vect_n IS NULL
-        LIMIT 10
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
