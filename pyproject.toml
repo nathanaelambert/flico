@@ -37,6 +37,8 @@ dependencies = [
     "opencv-python",
     "networkx",
     "lightglue @ git+https://github.com/cvg/LightGlue.git",
+    "timeout-decorator",
+    "pysocks",
 ]
 
 [tool.setuptools.packages.find]
