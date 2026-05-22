@@ -4,25 +4,45 @@ import src.trainer.db as db
 import src.server.db as server_db
 import src.trainer.date as date
 import src.utils.colors as c
-
+import src.crawler as crawler
 import geo_clustering
 import geo_grouping
-import geo_mapillary
+# import geo_mapillary
+
+def cache_geo_images():
+    print(f"{c.BLUE}Getting relevant geo pictures from the database...{c.RESET}")
+    df = db.photo_relevant_geo()
+    db.mark_photo(df)
+    print(f"{c.BLUE}Found {len(df)} pictures.\n Caching them...{c.RESET}")
+    df, cache = crawler.download_df_images(df)
 
 def add_all():
     print(f"{c.BLUE}Getting all pictures from the database...{c.RESET}")
-    all_pics = db.flickr_photo()
+    all_pics = db.flickr_photo_id()
     print(f"{c.BLUE}Found {len(all_pics)} pictures.\n Preparing table...{c.RESET}")
     db.mark_photo(all_pics)
 
-def geo_embedding():    
-    print(f"{c.BLUE}Looking for pics needing a clip embedding...{c.RESET}")
-    need_clip = db.photo_to_embed_with_clip()
-    print(f"{c.BLUE}Found {len(need_clip)} pictures. \n Generating embeddings...{c.RESET}")
-    db.update_ml_photo(geo_clustering.embedding.clip(need_clip), 'clip_vect_224')
-    print(f"{c.BLUE}Looking for pics needing a building label...{c.RESET}")
+def add_geo():
+    print(f"{c.BLUE}Getting all pictures with geo from the database...{c.RESET}")
+    all_pics = db.photo_to_dbscan()
+    print(f"{c.BLUE}Found {len(all_pics)} pictures.\n Preparing table...{c.RESET}")
+    db.mark_photo(all_pics)
+
+
+
+def geo_embedding():
+    while True:    
+        print(f"{c.BLUE}Looking for pics needing a clip embedding...{c.RESET}")
+        need_clip = db.photo_to_embed_with_clip()
+        print(f"{c.BLUE}Found {len(need_clip)} pictures. \n{c.RESET}")
+        if len(need_clip) > 0:
+            print(f"{c.BLUE} Generating embeddings...{c.RESET}")
+            db.update_ml_photo(geo_clustering.embedding.clip(need_clip), 'clip_vect_224')
+        else:
+            break
 
 def building_labeling():
+    print(f"{c.BLUE}Looking for pics needing a building label...{c.RESET}")
     need_label = db.photo_to_label_as_building()
     print(f"{c.BLUE}Found {len(need_label)} pictures. \n Labeling buidings and non-buildings...{c.RESET}")
     labeled = geo_clustering.clustering.label_buildings(need_label)
@@ -98,10 +118,17 @@ def _predict_date_description():
 
 
 if __name__ == "__main__":    
-    # grouping()
+    # geo_embedding()
+    # building_labeling()
     # clustering()
+    # add_all()
     # date_embedding()
-    geo_embedding()
+    # grouping()
+
+    # add_geo()
+    # geo_embedding()
+    cache_geo_images()
+
 
 
     # slow (loads millions of pics)
