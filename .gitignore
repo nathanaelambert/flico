@@ -6,3 +6,5 @@ metadata_combined/
 models/
 flico.egg-info/
 __pycache__
+flickr_commons/
+test_cache/
