@@ -144,5 +144,7 @@ CREATE TABLE machine_learning_photo (
     qwen3_pred_date INT, --date predicted by QWEN 3 with 320px input (for benchmarking image pipeline)
     descr_pred_date INT  --date predicted by NLP algo reading the text description
 
+    is_slow_download BOOLEAN, --when download is slow to avoid trying to download it right away
+
     is_test_set BOOLEAN, --deprecated
 );
