@@ -118,14 +118,12 @@ INSTITUTIONS = [
         # ("7167652@N06",	"George Eastman Museum"), 
         # ("61270229@N05",	"NavyMedicine"),
         # ("69269002@N04",	"libraryrahs@gmail.com"),
-        
-        ### Partially downloaded (causes errors)
         # ("11334970@N05",	"Royal Museums Greenwich"), # no public pic ?
 
         ### COMPLICATED cases
-        # ("12403504@N02",	"The British Library"), # all dates are 2013 
-        # ("49487266@N07",	"San Diego Air & Space Museum Archives"), # page 737 / 950
-        ("126377022@N07",	"Internet Archive Book Images"), # page 1033 / 10628
+        # ("12403504@N02",	"The British Library"),
+        # ("49487266@N07",	"San Diego Air & Space Museum Archives"),
+        ("126377022@N07",	"Internet Archive Book Images"), # missing page 1033, 1775 - 10628
         # ("200049760@N08",	"CommonsTestAccount"),
         # ("201268704@N06",	"CommonsPrivacyTest"),
     ]

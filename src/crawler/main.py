@@ -45,7 +45,7 @@ def crawl_pictures(owner_nsid: int, owner_name: str, start_page=1):
 
 def crawl_pictures_from_all_institutions():
     for nsid, name in INSTITUTIONS:
-        crawl_pictures(nsid, name, 1033)
+        crawl_pictures(nsid, name, 1034)
 
 def get_stats(df=count_flickr()):
     df['flickr'] = ''
