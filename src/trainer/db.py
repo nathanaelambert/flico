@@ -34,13 +34,14 @@ def photo_relevant_geo() -> pd.DataFrame:
     df = pd.read_sql_query(query, get_engine("trainer"))
     return df.loc[:, ~df.columns.duplicated()]
 
-def photo_to_embed_with_clip() -> pd.DataFrame:
+def sample_500_photo_to_embed_with_clip() -> pd.DataFrame:
     """Photos that need a clip_vect_224 embedding."""
     query = text("""--sql
         SELECT * FROM photo AS P
         JOIN machine_learning_photo AS MLP
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.clip_vect_224 IS NULL
+        AND MLP.is_slow_download IS NOT TRUE
         AND P.latitude IS NOT NULL
         AND P.longitude IS NOT NULL
         AND P.latitude  != 0
@@ -58,11 +59,16 @@ def photo_to_label_as_building() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.clip_vect_224 IS NOT NULL
+        AND P.latitude IS NOT NULL
+        AND P.longitude IS NOT NULL
+        AND P.latitude  != 0
+        AND P.longitude != 0
         AND MLP.is_building IS NULL
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
     return df
+
 
 def photo_to_dbscan() -> pd.DataFrame:
     """Photos of buildings that need to be clustered into geographical proximity"""
