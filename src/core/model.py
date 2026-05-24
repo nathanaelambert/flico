@@ -30,6 +30,8 @@ ml_photo_table = Table(
     Column("qwen3_pred_date", Integer),
     Column("descr_pred_date", Integer),
 
+    Column("is_slow_download", Boolean),
+
     ForeignKeyConstraint(
         ["owner_nsid", "id"],
         ["photo.owner_nsid", "photo.id"]
