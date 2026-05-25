@@ -133,6 +133,13 @@ CREATE TABLE machine_learning_photo (
     geo_group_id INT, -- TODO a group is 
     is_central BOOLEAN, -- TODO true for the best picture of a group   
 
+    mapillary_id INT, --id of the visually matching mapillary picture
+    p_match, --probability that the mapillary image matches the flickr image
+    mapillary_lon DOUBLE PRECISION,
+    mapillary_lat DOUBLE PRECISION,
+    mapillary_compass_angle DOUBLE PRECISION, --angle of the camera on ground
+    mapillary_captured_at BIGINT, --unix timestamp
+    mapillary_pic_url TEXT,
 
     sig_lip_vect_n VECTOR(768), --embedding of 320px pic
     sig_lip_vect_o VECTOR(768), --embedding of full res pic

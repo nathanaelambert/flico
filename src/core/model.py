@@ -17,6 +17,14 @@ ml_photo_table = Table(
     Column("geo_group_id", Integer),
     Column("is_central", Boolean),
 
+    Column("mapillary_id", Integer),
+    Column("p_match", Float),
+    Column("mapillary_lon", Float),
+    Column("mapillary_lat", Float),
+    Column("mapillary_compass_angle", Float),
+    Column("mapillary_captured_at", BigInteger),
+    Column("mapillary_pic_url", Text),
+
     Column("is_test_set", Boolean),  # deprecated ?
 
     Column("is_date_test", Boolean),
