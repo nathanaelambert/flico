@@ -83,12 +83,22 @@ def fast_missing_buildings():
     # clusters = geo_clustering.clustering.cluster(labeled)
     # clusters = clusters[clusters['geo_cluster_id'].notna()]
     # db.update_ml_photo(clusters, 'geo_cluster_id')
-    # print(f"{c.BLUE}Looking for pics to group (same building together)...{c.RESET}")
-    # print(f"{c.BLUE}Found {len(clusters)} pictures. \n Computing photogrametry matching between pictures...{c.RESET}")
-    # grouped = geo_grouping.grouping(clusters)
-    # grouped = grouped[grouped['geo_group_id'].notna()]
-    # db.update_ml_photo(grouped, 'geo_group_id')
-    # db.update_ml_photo(grouped, 'is_central')
+
+
+def fast_grouping():
+    cache = crawler.PersistentImageCache("flickr_commons") 
+    print(f"{c.BLUE}Looking for pics to group (same building together)...{c.RESET}")
+    clusters = db.photo_to_group()
+    print(f"{c.BLUE} Getting pictures from cache {c.RESET}")
+    pics = crawler.download_df_images(clusters, cache, download_missing=False, fast_cache=False)
+    missed_df = (clusters.merge(pics[['owner_nsid', 'id']], on=['owner_nsid', 'id'], how='left', indicator=True).query('_merge == "left_only"').drop(columns=['_merge']))
+    print(f"Cache missed: {c.RED} {len(missed_df)} {c.RESET} pictures")
+    downloaded = crawler.download_df_images(missed_df, cache, download_missing=True, fast_cache=False)
+    print(f"{c.BLUE}Found {len(clusters)} pictures. \n Computing photogrametry matching between pictures...{c.RESET}")
+    grouped = geo_grouping.grouping(clusters, cache)
+    grouped = grouped[grouped['geo_group_id'].notna()]
+    db.update_ml_photo(grouped, 'geo_group_id')
+    db.update_ml_photo(grouped, 'is_central')
     # print(f"{c.BLUE}Matching {len(grouped)} pictures with mapillary candidates...{c.RESET}")
     # matched = geo_mapillary.find_matches(grouped)
 
@@ -175,10 +185,11 @@ def _predict_date_description():
 if __name__ == "__main__":    
     # geo_embedding()
     # building_labeling()
-    clustering()
+    # clustering()
     # add_all()
     # date_embedding()
     # grouping()
+    fast_grouping()
 
     # add_geo()
     # geo_embedding()

@@ -80,6 +80,7 @@ def photo_to_dbscan() -> pd.DataFrame:
         AND P.longitude IS NOT NULL
         AND P.latitude  != 0
         AND P.longitude != 0
+        AND MLP.is_building IS NOT NULL
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     return df.loc[:, ~df.columns.duplicated()]
@@ -90,7 +91,7 @@ def photo_to_group() -> pd.DataFrame:
         SELECT * FROM photo AS P
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
-        WHERE MLP.geo_cluster_id IS NOT NULL
+        WHERE MLP.geo_cluster_id >= 0
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
