@@ -141,7 +141,7 @@ class PersistentImageCache:
             json.dump(serializable, f, indent=2)
         tmp_path.replace(self.proxy_scores_path)
 
-    def get(self, url: str,*, download_missing=False, fast_cache=False) -> Image.Image:
+    def get(self, url: str,*, download_missing=False, fast_cache=False, disk_save=False) -> Image.Image:
         cached = self._mem_get(url)
 
         if cached is not None:
@@ -170,7 +170,8 @@ class PersistentImageCache:
                     img = Image.open(io.BytesIO(r.content))
                     img.load()
                     img = img.convert("RGB")
-                    img.save(path, format="PNG")
+                    if disk_save:
+                        img.save(path, format="PNG")
 
                     # reward successful proxy
                     self._decrease_proxy_score(proxy)
@@ -192,36 +193,74 @@ class PersistentImageCache:
             self._mem_put(url, img)
         return img
 
-def download_df_images(df: pd.DataFrame, cache: PersistentImageCache, url_col="url_o", download_missing=False, fast_cache=False):
-    urls = df[url_col].dropna().astype(str).unique().tolist()
-    def worker(url):
-        try:
-            cache.get(url, download_missing=download_missing, fast_cache=fast_cache)
-            return True
-        except Exception:
-            return False
-    successful_urls = set()
-    with ThreadPoolExecutor(max_workers=NUMBER_OF_THREADS) as executor:
-        future_to_url = {
-            executor.submit(worker, url): url
-            for url in urls
-        }
-        for future in tqdm(
-            as_completed(future_to_url),
-            total=len(future_to_url),
-            desc=("Downloading images" if download_missing else "Retrieving images from disk"),
-        ):
-            url = future_to_url[future]
+    def get_images(self, urls: list[str], download_missing=False, fast_cache=False, disk_save=False):
+        imgs = [None] * len(urls)
+
+        def worker(i, url):
             try:
-                success = future.result()
-                if success:
-                    successful_urls.add(url)
+                img = self.get(
+                    url,
+                    download_missing=download_missing,
+                    fast_cache=fast_cache,
+                    disk_save=disk_save,
+                )
+                return i, img
             except Exception:
-                pass
-    cache.save_proxy_scores()
-    filtered_df = df[df[url_col].astype(str).isin(successful_urls)].copy()
-    return filtered_df
-  
+                return i, None
+
+        with ThreadPoolExecutor(max_workers=NUMBER_OF_THREADS) as executor:
+            futures = [
+                executor.submit(worker, i, url)
+                for i, url in enumerate(urls)
+            ]
+
+            for future in tqdm(
+                as_completed(futures),
+                total=len(futures),
+                desc=(
+                    "Downloading images"
+                    if download_missing
+                    else "Retrieving images from disk"
+                ),
+            ):
+                i, img = future.result()
+                imgs[i] = img
+
+        self.save_proxy_scores()
+
+        return imgs
+
+
+def download_df_images(self, df, url_col="url_o", download_missing=False, fast_cache=False, disk_save=False):
+        urls = df[url_col].dropna().astype(str).unique().tolist()
+        def worker(url):
+            try:
+                self.get(url, download_missing=download_missing, fast_cache=fast_cache, disk_save=disk_save)
+                return True
+            except Exception:
+                return False
+        successful_urls = set()
+        with ThreadPoolExecutor(max_workers=NUMBER_OF_THREADS) as executor:
+            future_to_url = {
+                executor.submit(worker, url): url
+                for url in urls
+            }
+            for future in tqdm(
+                as_completed(future_to_url),
+                total=len(future_to_url),
+                desc=("Downloading images" if download_missing else "Retrieving images from disk"),
+            ):
+                url = future_to_url[future]
+                try:
+                    success = future.result()
+                    if success:
+                        successful_urls.add(url)
+                except Exception:
+                    pass
+        cache.save_proxy_scores()
+        filtered_df = df[df[url_col].astype(str).isin(successful_urls)].copy()
+        return filtered_df
+    
 
 
 if __name__ == "__main__":
