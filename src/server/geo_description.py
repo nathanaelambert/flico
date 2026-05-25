@@ -1,5 +1,6 @@
 from sqlalchemy import text
 import pandas as pd
+import re
 
 
 from src.core.db import get_engine
@@ -23,11 +24,14 @@ if __name__ == "__main__":
     score_entries = {
         #positive
         "architectur"   : +30,
+        "château"       :+40,
+        "highway"       : +10,
         "street"        : +20,
         "avenue"        : +20,
         "built"         : +50,
         "build"         : +70,
         "house"         : +50,
+        "home"          :+50,
         "tower"         : +25,
         "church"        : +45,
         "cathedral"     : +45,
@@ -44,6 +48,10 @@ if __name__ == "__main__":
         "view from"     : +4,
         "outside"       : +3,
         "at"            : +3,
+        "windows"       : +25,
+        "porches"       : +25,
+        "door"          : +10,
+
     
         #negative
         "born"          : -50,
@@ -55,7 +63,7 @@ if __name__ == "__main__":
         "locomotive"    : -100,
         "rail"          : -50,
         "portrait"      : -100,
-        "pose"          : -10,
+        "pose"          : -50,
         "uniform"       : -20,
         "family"        : -50,
         "team"          : -30,
@@ -77,11 +85,13 @@ if __name__ == "__main__":
         lambda row: sum(
             score
             for keyword, score in score_entries.items()
-            if keyword in (
-                str(row['title']) +
-                str(row['title']) +
-                str(row['description'])
-            ).lower()
+            if re.search(
+                rf'(?<![a-z]){re.escape(keyword)}',
+                (
+                    str(row['title']) +
+                    str(row['description'])
+                ).lower()
+            )
         ),
         axis=1
     )
@@ -102,5 +112,5 @@ if __name__ == "__main__":
         #  'descr_pred_date', 
         #  'year', 
     ]
-    print(df[columns].sort_values(by='building_score', ascending=False).head(50))
+    print(df[columns].sort_values(by='building_score', ascending=True).head(50))
 
