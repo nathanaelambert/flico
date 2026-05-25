@@ -85,6 +85,16 @@ def photo_to_dbscan() -> pd.DataFrame:
     df = pd.read_sql_query(query, get_engine("trainer"))
     return df.loc[:, ~df.columns.duplicated()]
 
+def get_st_anthony() -> pd.DataFrame:
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        WHERE owner_nsid = ""
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
 def photo_to_group() -> pd.DataFrame:
     """Photos with cluster id that needs to be grouped if they are the same building"""
     query = text("""--sql
@@ -93,6 +103,18 @@ def photo_to_group() -> pd.DataFrame:
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.geo_cluster_id >= 0
         AND geo_group_id is NULL
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
+
+def photo_to_mapillary() -> pd.DataFrame:
+    """Photos to match with mapillary"""
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        WHERE geo_cluster_id = 301
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]

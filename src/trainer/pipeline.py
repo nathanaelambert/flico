@@ -7,7 +7,7 @@ import src.utils.colors as c
 import src.crawler as crawler
 import geo_clustering
 import geo_grouping
-# import geo_mapillary
+import geo_mapillary
 
 def cache_geo_images():
     cache = crawler.PersistentImageCache("flickr_commons") 
@@ -103,6 +103,29 @@ def fast_grouping():
     # print(f"{c.BLUE}Matching {len(grouped)} pictures with mapillary candidates...{c.RESET}")
     # matched = geo_mapillary.find_matches(grouped)
 
+def fast_mapillary():
+    cache = crawler.PersistentImageCache("flickr_commons") 
+    print(f"{c.BLUE}Looking for pics to match...{c.RESET}")
+    clusters = db.photo_to_mapillary()
+    cluster_df = clusters[clusters['id'] == 3486793266]
+    # cluster_df = clusters[clusters['geo_cluster_id'] == 256]
+    # print(f"{c.BLUE}Downloading cluster{c.RESET}")
+    # downloaded = crawler.download_df_images(cluster_df, cache, download_missing=True, fast_cache=False)
+    print(f"{c.BLUE}Matching {len(cluster_df)} pictures with mapillary candidates...{c.RESET}")
+    matched = geo_mapillary.find_matches(cluster_df, cache)
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.max_colwidth', None)
+    pd.set_option('display.width', None)
+    pd.set_option('display.expand_frame_repr', False)
+
+    if "p_match" not in matched.columns:
+        print(f"{c.RED} No match{c.RESET}")
+        return
+    matched['page'] = matched.apply(lambda r : f"https://www.flickr.com/photos/{r['owner_nsid']}/{r['id']}", axis=1 )
+    print(matched[['mapillary_pic_url', 'page', 'p_match']].head(50))
+
+
 
 def building_labeling():
     print(f"{c.BLUE}Looking for pics needing a building label...{c.RESET}")
@@ -190,7 +213,8 @@ if __name__ == "__main__":
     # add_all()
     # date_embedding()
     # grouping()
-    fast_grouping()
+    # fast_grouping()
+    fast_mapillary()
 
     # add_geo()
     # geo_embedding()
