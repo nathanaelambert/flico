@@ -92,6 +92,7 @@ def photo_to_group() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.geo_cluster_id >= 0
+        AND geo_group_id is NULL
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
