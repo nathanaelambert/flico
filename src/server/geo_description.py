@@ -23,70 +23,164 @@ if __name__ == "__main__":
 
     score_entries = {
         #positive
-        "architectur"   : +30,
-        "château"       :+40,
-        "highway"       : +10,
-        "street"        : +20,
-        "avenue"        : +20,
-        "built"         : +50,
-        "build"         : +70,
-        "house"         : +50,
-        "home"          :+50,
-        "tower"         : +25,
-        "church"        : +45,
-        "cathedral"     : +45,
-        "st."           : +20,
-        "saint"         : +20,
-        "memorial"      : +15,    
-        "block"         : +20,
-        "near"          : +15,
-        "village"       : +10,
-        "town"          : +10,
-        "wall"          : +2,
-        "area"          : +4,
-        "view of"       : +6,
-        "view from"     : +4,
-        "outside"       : +3,
-        "at"            : +3,
-        "windows"       : +25,
-        "porches"       : +25,
-        "door"          : +10,
+        "architectur*"   : +30,
+        "residen*"       : +30,
+        "château*"       : +40,
+        "highway*"       : +10,
+        "street*"        : +30,
+        "avenue*"        : +20,
+        "city"           : +7,           
+        "built"          : +50,
+        "build*"         : +70,
+        "house*"         : +50,
+        "home*"          : +50,
+        "tower*"         : +25,
+        "*toren"         : +25,
+        "tour"           : +25,
+        "church*"        : +45,
+        "*kerk"          : +20,
+        "cathedral*"     : +45,
+        "temple*"        : +50,
+        "station*"       : +45,
+        "st."            : +20,
+        "saint*"         : +20,
+        "memorial*"      : +15,    
+        "block*"         : +20,
+        "near"           : +15,
+        "village*"       : +10,
+        "façade"         : +50,
+        "facade"         : +50,
+        "town*"          : +10,
+        "*ville"         : +10,
+        "wall*"          : +2,
+        "area*"          : +4,
+        "view of"        : +6,
+        "vue"            : +6,
+        "view from"      : +4,
+        "outside"        : +3,
+        "at"             : +3,
+        "window*"        : +25,
+        "porche*"        : +25,
+        "door*"          : +10,
+        "*institu*"      : +5,
+        "bridge*"        : +2,
+        "*berg*"         : +5,
+        "place"          : +70,
+        "sted"           : +40,
+        "gate"           : +40,
+        "plass"          : +25,
+        "kommune"        : +2,
+        "*hotel*"        : +50,  
+        "monument*"      : +30,
+        "parc"           : +10,
+        "moulin"         : +5,
+        "statue"         : +40,
+        "tombe*"         : +30,
+          
+
+
+
+
 
     
         #negative
-        "born"          : -50,
-        "scene"         : -10,
-        "ship"          : -100,
-        "harbour"       : -40,
-        "port"          : -30,
-        "train"         : -50,
-        "locomotive"    : -100,
-        "rail"          : -50,
-        "portrait"      : -100,
-        "pose"          : -50,
-        "uniform"       : -20,
-        "family"        : -50,
-        "team"          : -30,
-        "dress"         : -20,
-        "child"         : -20,
-        "young"         : -40,
-        "falls"         : -30,
-        "show"          : -30,
-        "plan"          : -100,
-        "map"           : -100,
-        "amendment"     : -150,
-        "constitution"  : -150,
-        "house of representa": -100,
-        "house of common": -100,
+        "born"           : -50,
+        "scene*"         : -10,
+        "construction*"  : -50,
+        "demolition*"    : -40,
+        "fire*"          : -30,  
+        "ship*"          : -100,
+        "*plan"          : -40,
+        "harbour*"       : -40,
+        "gun*"           : -20,
+        "fight*"         : -15,
+        "port*"          : -30,
+        "surf"           : -150,
+        "train*"         : -50,
+        "locomotive*"    : -100,
+        "*tunnel*"       : -50,
+        "*banen"         : -50,
+        "rail*"          : -50,
+        "wagon*"         : -30,
+        "portrait*"      : -100,
+        "portrett"       : -100,
+        "pose*"          : -50,
+        "uniform*"       : -20,
+        "wear*"          : -30,
+        "famil*"         : -50,
+        "guest*"         : -40,
+        "team*"          : -30,
+        "member*"        : -40,
+        "group*"         : -10,
+        "dress*"         : -20,
+        "child*"         : -20,
+        "mother"         : -50,
+        "girl*"          : -40,
+        "boy*"           : -40,
+        "animal*"        : -30,
+        "*broeder*"      : -40,
+        "young"          : -40,
+        "falls"          : -30,
+        "garden"         : -30,
+        "show*"          : -30,
+        "plan"           : -100,
+        "sketch*"        : -100,
+        "map"            : -100,
+        "amendment*"     : -150,
+        "publish*"       : -10,
+        "statsakt*"      : -50,
+        "constitution*"  : -150,
+        "meet*"          : -30,
+        "*tevnet*"       : -30,
+        "house of representa*": -100,
+        "house of common*": -100,
+        "gorge*"         : -50,
+        "ice"            : -40,
+        "bois"           : -40,
+        "inhabited"      : -150,
+        "wood*"          : -40,
+        "tree*"          : -50,
+        "hole*"          : -30,
+        "exhibit*"       : -5,
+        "*stelling"      : -5,
+        "chaplian"       : -20,
+        "*ker"           : -15,
+        "*kers"          : -15,
+        "draft*"         : -40,
+        "furniture*"     : -40,
+        "day"            : -40,
+        "president"      : -150,
+        "worker*"        : -50,
+        "white house"    : -100,
+        "chamber"        : -50,
+        "office"         : -40,
+        "room"           : -100,
+
+
 
     }
+
+    def keyword_to_regex(k):
+        k = k.lower().strip()
+        if k.startswith("*") and k.endswith("*") and len(k) > 2:
+            core = re.escape(k[1:-1])
+            return rf"{core}"
+        elif k.startswith("*"):
+            core = re.escape(k[1:])
+            return rf"{core}(?![a-z])"
+        elif k.endswith("*"):
+            core = re.escape(k[:-1])
+            return rf"{core}"
+        else:
+            core = re.escape(k)
+            return rf"(?<![a-z]){core}(?![a-z])"
 
     df['building_score'] = df.apply(
         lambda row: sum(
             score
             for keyword, score in score_entries.items()
             if re.search(
-                rf'(?<![a-z]){re.escape(keyword)}',
+                keyword_to_regex(keyword),
                 (
                     str(row['title']) +
                     str(row['description'])
@@ -112,5 +206,8 @@ if __name__ == "__main__":
         #  'descr_pred_date', 
         #  'year', 
     ]
-    print(df[columns].sort_values(by='building_score', ascending=True).head(50))
+    # df = df[df['building_score'] == 0]
+    # print(df[columns].head(50))
+
+    print(df[columns].sort_values(by='building_score', ascending=False).head(50))
 
