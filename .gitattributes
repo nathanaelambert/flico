@@ -1,0 +1,4 @@
+*.ipynb linguist-generated=true
+*.html linguist-generated=true
+exported_plots/** linguist-generated=true
+deprecated/** linguist-generated=true
