@@ -231,11 +231,11 @@ class PersistentImageCache:
         return imgs
 
 
-def download_df_images(self, df, url_col="url_o", download_missing=False, fast_cache=False, disk_save=False):
+def download_df_images(df, cache, url_col="url_o", download_missing=False, fast_cache=False, disk_save=False):
         urls = df[url_col].dropna().astype(str).unique().tolist()
         def worker(url):
             try:
-                self.get(url, download_missing=download_missing, fast_cache=fast_cache, disk_save=disk_save)
+                cache.get(url, download_missing=download_missing, fast_cache=fast_cache, disk_save=disk_save)
                 return True
             except Exception:
                 return False
