@@ -1,8 +1,10 @@
 import pandas as pd
 from typing import List
+from tqdm import tqdm
 import src.trainer.db as db
 import src.server.db as server_db
 import src.trainer.date as date
+import src.trainer.geo as geo
 import src.utils.colors as c
 import src.crawler as crawler
 import geo_clustering
@@ -77,12 +79,32 @@ def fast_missing_buildings():
     db.update_ml_photo(labeled, 'p_building')
     cache.clear_ram()
 
+def batch_buildings_label():
+    cache = crawler.PersistentImageCache("flickr_commons") 
+    batch = 0
+    while True:
+        batch += 1 
+        print(f"{c.BLUE}Batch {batch}: \n Looking for pics needing a building label...{c.RESET}")
+        need_label = db.sample_500_photo_to_label_as_building()
+        print(f"{c.BLUE}Sampled {len(need_label)} pictures. \n{c.RESET}")
+        if len(need_label) <= 0:
+            return
+        print(f"{c.BLUE} Getting pictures from cache {c.RESET}")
+        pics = crawler.download_df_images(need_label, cache, download_missing=False, fast_cache=True)
+        print(f"{c.BLUE}Found {len(pics)} pictures. \n Labeling buidings and non-buildings...{c.RESET}")
+        labeled = geo_clustering.clustering.label_buildings(pics, cache)
+        labeled = labeled[labeled["is_building"].notna()]
+        db.update_ml_photo(labeled, 'is_building')
+        db.update_ml_photo(labeled, 'p_building')
+        cache.clear_ram()
+
+
 # def per_cluster_pipeline():
-    # print(f"{c.BLUE}Deleting previous clusters{c.RESET}")
-    # print(f"{c.BLUE}Found {len(labeled)} pictures. \n Clustering buildings of same geographical area (DBSCAN)...{c.RESET}")
-    # clusters = geo_clustering.clustering.cluster(labeled)
-    # clusters = clusters[clusters['geo_cluster_id'].notna()]
-    # db.update_ml_photo(clusters, 'geo_cluster_id')
+#     print(f"{c.BLUE}Deleting previous clusters{c.RESET}")
+#     print(f"{c.BLUE}Found {len(labeled)} pictures. \n Clustering buildings of same geographical area (DBSCAN)...{c.RESET}")
+#     clusters = geo_clustering.clustering.cluster(labeled)
+#     clusters = clusters[clusters['geo_cluster_id'].notna()]
+#     db.update_ml_photo(clusters, 'geo_cluster_id')
 
 
 def fast_grouping():
@@ -96,6 +118,7 @@ def fast_grouping():
     # downloaded = crawler.download_df_images(missed_df, cache, download_missing=True, fast_cache=False)
     print(f"{c.BLUE}Found {len(clusters)} pictures. \n Computing photogrametry matching between pictures...{c.RESET}")
     for cluster_id, df_cluster in clusters.groupby("geo_cluster_id"):
+        print(f"{c.BLUE}Processing cluster {c.RESET}{cluster_id}")
         grouped = geo_grouping.grouping(df_cluster, cache)
         grouped = grouped[grouped['geo_group_id'].notna()]
         db.update_ml_photo(grouped, 'geo_group_id')
@@ -103,29 +126,33 @@ def fast_grouping():
     # print(f"{c.BLUE}Matching {len(grouped)} pictures with mapillary candidates...{c.RESET}")
     # matched = geo_mapillary.find_matches(grouped)
 
+
+def geo_description():
+    db.rm_data_ml_photo("p_building_given_descr")
+    geo.predict_is_building_given_descr()
+
 def fast_mapillary():
     cache = crawler.PersistentImageCache("flickr_commons") 
     print(f"{c.BLUE}Looking for pics to match...{c.RESET}")
     clusters = db.photo_to_mapillary()
-    cluster_df = clusters[clusters['id'] == 3486793266]
-    # cluster_df = clusters[clusters['geo_cluster_id'] == 256]
-    # print(f"{c.BLUE}Downloading cluster{c.RESET}")
-    # downloaded = crawler.download_df_images(cluster_df, cache, download_missing=True, fast_cache=False)
-    print(f"{c.BLUE}Matching {len(cluster_df)} pictures with mapillary candidates...{c.RESET}")
-    matched = geo_mapillary.find_matches(cluster_df, cache)
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_colwidth', None)
-    pd.set_option('display.width', None)
-    pd.set_option('display.expand_frame_repr', False)
+    sorted_clusters = clusters.sort_values(by="p_building_given_descr", ascending=False)
+    for i in tqdm(range(len(sorted_clusters)), total=len(sorted_clusters), desc="Matching images", disable=False):
+        df_with_one_row = sorted_clusters.iloc[[i]]
+        matched = geo_mapillary.find_matches(df_with_one_row, cache)
+        db.update_ml_photo(matched, 'mapillary_candidates')
+        if "p_match" not in matched.columns:
+            continue
+        if matched["p_match"].isna().all():
+            continue
+        db.update_ml_photo(matched, 'mapillary_id')
+        db.update_ml_photo(matched, 'p_match')
+        db.update_ml_photo(matched, 'mapillary_lon')
+        db.update_ml_photo(matched, 'mapillary_lat')
+        db.update_ml_photo(matched, 'mapillary_captured_at')
+        db.update_ml_photo(matched, 'mapillary_compass_angle')
+        db.update_ml_photo(matched, 'mapillary_pic_url')
 
-    if "p_match" not in matched.columns:
-        print(f"{c.RED} No match{c.RESET}")
-        return
-    matched['page'] = matched.apply(lambda r : f"https://www.flickr.com/photos/{r['owner_nsid']}/{r['id']}", axis=1 )
-    print(matched[['mapillary_pic_url', 'page', 'p_match']].head(50))
-
-
+    
 
 def building_labeling():
     print(f"{c.BLUE}Looking for pics needing a building label...{c.RESET}")
@@ -214,18 +241,21 @@ if __name__ == "__main__":
     # date_embedding()
     # grouping()
     # fast_grouping()
+    # geo_description()
     fast_mapillary()
 
     # add_geo()
     # geo_embedding()
     # cache_geo_images()
     # fast_missing_buildings()
+    # batch_buildings_label()
 
+    # db.rm_data_ml_photo("geo_group_id")
+    # db.rm_data_ml_photo("is_central")
 
 
     # slow (loads millions of pics)
     #flickr_photos = db.flickr_photo()
-    # db.rm_data_ml_photo('descr_pred_date')
     # predict_date_description()
     # date.description.explore()
     
