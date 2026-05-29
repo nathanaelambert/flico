@@ -69,6 +69,25 @@ def photo_to_label_as_building() -> pd.DataFrame:
     df = df.loc[:, ~df.columns.duplicated()]
     return df
 
+def sample_500_photo_to_label_as_building() -> pd.DataFrame:
+    """Photos with clip embedding that need to be labeled as building or non-building"""
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+        WHERE MLP.clip_vect_224 IS NOT NULL
+        AND P.latitude IS NOT NULL
+        AND P.longitude IS NOT NULL
+        AND P.latitude  != 0
+        AND P.longitude != 0
+        AND MLP.is_building IS NULL
+        ORDER BY RANDOM()
+        LIMIT 500
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
+
 
 def photo_to_dbscan() -> pd.DataFrame:
     """Photos of buildings that need to be clustered into geographical proximity"""
@@ -114,11 +133,19 @@ def photo_to_mapillary() -> pd.DataFrame:
         SELECT * FROM photo AS P
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
-        WHERE geo_cluster_id = 301
+        WHERE MLP.p_match is NULL
+        AND MLP.clip_vect_224 is NOT NULL
+        AND MLP.mapillary_candidates IS DISTINCT FROM 0
+        AND P.latitude IS NOT NULL
+        AND P.longitude IS NOT NULL
+        AND P.latitude  != 0
+        AND P.longitude != 0
+
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
     return df
+
 
 # ---------------------date pipeline ---------------------------------
 def photo_to_embed_with_siglip() -> pd.DataFrame:
@@ -230,6 +257,26 @@ def rm_data_ml_photo(column_name: str) -> None:
     print(f"Removed data in column {column_name}. {affected} rows affected")
         
     
+
+def rm_low_confidence_matches():
+    affected = 0
+    with get_engine('trainer').connect() as conn:
+        result = conn.execute(text("""--sql
+                UPDATE machine_learning_photo
+                SET
+                    p_match = NULL,
+                    mapillary_id = NULL,
+                    mapillary_lon = NULL,
+                    mapillary_lat = NULL,
+                    mapillary_captured_at = NULL,
+                    mapillary_compass_angle = NULL,
+                    mapillary_pic_url = NULL
+                WHERE p_match <= 0.05;
+        """))
+        affected += result.rowcount
+        conn.commit()
+    print(f"Removed matches with p < 0.05. {affected} rows affected")
+
 
 
 
