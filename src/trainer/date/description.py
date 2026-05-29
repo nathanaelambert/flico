@@ -1,6 +1,5 @@
 import pandas as pd
 import re
-from collections import defaultdict, Counter
 from statistics import mean
 from typing import Optional
 import numpy as np
@@ -13,13 +12,97 @@ def predictions(df: pd.DataFrame) -> pd.DataFrame:
     if df.empty:
         return df
     results = df.apply(
-        lambda row: _predict_date(row['description'], row['title'], row['date_upload_year'], row['owner_nsid']), 
+        lambda row: predict_dates(row['description'], row['title'], row['date_upload_year'], row['owner_nsid']), 
         axis=1
     )
-    df[["descr_pred_date", "descr_score"]] = pd.DataFrame(results.tolist(), index=df.index)
+    df[["descr_pred_date", "p_descr_date", 
+        "descr_pred_date_1", "p_descr_date_1"
+        "descr_pred_date_2", "p_descr_date_2"
+    ]] = pd.DataFrame(results.tolist(), index=df.index)
     return df
+      
 
-def isSerial(word: str) -> bool:
+def predict_dates(description: str, title: str, date_uploaded: int, owner_nsid: str) -> list[int | float]: 
+    """
+    Assigns a score to each candidate date (4 consecutive digits) in the description and title based on ad hoc PATTERNS.
+    Return dictionnary key= candidate dates, values = probabilty of match
+    Might return None if no satisfying candidate is found.
+    """
+    if owner_nsid == "99115493@N08":
+        return None # WikiSinaloa has a bad habbit of having a stupid 4 digit number as title
+    description = _sub_keywords(description)
+    all_matches = extract_four_digits_sequences_with_scores(description, title)
+    if not all_matches:
+        return None
+    score_matches = _score_matches(all_matches)
+    proba_per_year_best_3 = _scores_to_proba_best_3(score_matches)
+
+def _sub_keywords(description : str)-> str:
+    description = re.sub(r'(?<!\d)(\d{3})?-\?', r'\g<1>5', description) # Optional: approximate decade to midpoint
+    description = re.sub(r'(?<=\s)[Nn]o\.? ', 'Number', description)
+    description = re.sub(r'(?<=\s)[Rr]ef\.? ', 'Reference', description)
+    description = re.sub(r'(?<=\s)[cC]a?\.', 'Circa ', description)
+    description = re.sub(r'\d{3} - LEFT', 'garbage', description)
+    return description
+
+def _extract_candidate_with_context(text):
+    return [
+        {   'year': int(m.group()), 'full_text': text,
+            'line': line, 'sentence': sentence, 'word': word,
+            'start': m.start(), 'end': m.end(),
+        } 
+        for line in text.splitlines()
+        for sentence in re.split(r'\.\s+|; |\? |, |—|>|<|\.\. |\.\.\. |\.(?=$)', line)
+        for word in sentence.split(' ')
+        for m in re.finditer(r'(?<![A-Za-z0-9_])[12]\d{3}(?![0-9])', word)
+    ]
+
+def _extract_four_digits_sequences_with_scores(description: str, title: str):
+    all_matches = [
+        {**m, 'source': 'description'} for m in _extract_candidate_with_context(description or "")
+    ] + [
+        {**m, 'source': 'title'} for m in _extract_candidate_with_context(title or "")
+    ]
+    return [m for m in all_matches if m['year'] <= date_uploaded]
+    
+def _score_matches(all_matches):
+    PATTERNS = lambda m, years: {
+        'bracket_before'            : +13 if m['word'].endswith(']') else 0,
+        'bracket_after'             : +14 if m['word'].startswith('[') else 0,
+        'parenth_before'            : +7 if m['word'].endswith(')') else 0,
+        'parenth_after'             : +8 if m['word'].startswith('(') else 0,
+        'single_on_line'            : +10 if (dates := re.findall(r'\d{4}', m['line'])) and len(dates) == 1 and dates[0] == str(m['year']) else 0,
+        'in_title'                  : +5 if m.get('source') == 'title' else 0,
+        'has_smaller_in_description': +6 if years and m['year'] > min(years) else 0,
+        'has_bigger_in_description' : +6 if years and m['year'] < max(years) else 0,
+        'has_date_on_line'          : +28 if 'date' in m['line'].lower() else 0,
+        'has_year_on_line'          : +28 if 'year' in m['line'].lower() else 0,
+        'has_field'                 : +30 if any(pat in m['sentence'].lower() for pat in ['produced', 'published', 'created', 'taken']) else 0,
+        'probable_range'            : +30 * np.exp(-((1925 - m['year']) ** 2) / (2 * 150 ** 2)),
+        'circa'                     : +6 if 'circa' in m['sentence'].lower() else 0,
+        # punish negative patterns
+        'serial_numbers'            : -80 if _isSerial(m['word']) else 0,
+        'PX'                        : -40 if 'PX' in m['sentence'] else 0,
+        'CO'                        : -40 if 'CO' in m['sentence'] else 0, 
+        'ref'                       : -40 if 'ref' in m['sentence'].lower() else 0,
+        'donated'                   : -50 if any(pat in m['sentence'].lower() for pat in ['donated', 'donation', 'transfer', 'loaned']) else 0 ,
+        'number'                    : -50 if any(pat in m['sentence'].lower() for pat in ['number', 'call']) else 0,
+        "dollar"                    : -50 if '$' in m['sentence'] else 0,
+        "street"                    : -40 if any(pat in m['sentence'].lower() for pat in['street', 'avenue', 'road', 'location']) else 0,
+    }
+    FILTER_THRESHOLD = 0
+    return [
+        {
+            'match': m,
+            'score_by_pattern': p,
+            'total_score': sum(p.values())
+        }
+        for m in all_matches
+        for p in [PATTERNS(m, [m['year'] for m in all_matches if m['source'] == 'description'])]
+        if sum(p.values()) >= FILTER_THRESHOLD
+    ]
+
+def _isSerial(word: str) -> bool:
     if '_' in word:
         return True
     word = re.sub(r'[\[\]()]', '', word)
@@ -42,90 +125,29 @@ def isSerial(word: str) -> bool:
     errors: 
     "Eph-E-DRAMA-1899-01." -> True
     """
-        
 
-def _predict_date(description: str, title: str, date_uploaded: int, owner_nsid: str) -> tuple[Optional[int], int]: 
-    """
-    Assigns a score to each candidate date (4 consecutive digits) in the description and title based on ad hoc patterns.
-    Return dates with the best score, average amongst candidates to break ties.
-    Might return None if no satisfying candidate is found.
-    """
-    def _extract_candidate_with_context(text):
-        return [
-            {   'year': int(m.group()), 'full_text': text,
-                'line': line, 'sentence': sentence, 'word': word,
-                'start': m.start(), 'end': m.end(),
-            } 
-            for line in text.splitlines()
-            for sentence in re.split(r'\.\s+|; |\? |, |—|>|<|\.\. |\.\.\. |\.(?=$)', line)
-            for word in sentence.split(' ')
-            for m in re.finditer(r'(?<![A-Za-z0-9_])[12]\d{3}(?![0-9])', word)
-        ]
+def _scores_to_proba_best_3(scored_matches):
+    grouped = {}
+    for match in score_matches:
+        grouped.setdefault([match["match"]["year"]], []).append(match["total_score"])
     
-    description = re.sub(r'(?<!\d)(\d{3})?-\?', r'\g<1>5', description) # Optional: approximate decade to midpoint
-    description = re.sub(r'(?<=\s)[Nn]o\.? ', 'Number', description)
-    description = re.sub(r'(?<=\s)[Rr]ef\.? ', 'Reference', description)
-    description = re.sub(r'(?<=\s)[cC]a?\.', 'Circa ', description)
-    description = re.sub(r'\d{3} - LEFT', 'garbage', description)
-    if owner_nsid == "99115493@N08":
-        return None, 0 # WikiSinaloa has a bad habbit of having a stupid 4 digit number as title
+    combined_probas = {}
+    for year, score_list in grouped.items():
+        best_score = max(score for score in score_list)
+        combined_non_zero_score = best_score + 2*len(score_list) + 400
+        proba = min(0.9999, combined_non_zero_score/591)
+        combined_probas[year] = proba
+    
+    ordered_probas = dict(sorted(combined_probas.items(), key=lambda i: i[1], reverse=True))
+    flattened = [item for tup in list(ordered_probas.items())[:3] for item in tup]
+    return flattened[:6] + [None] * max(0, 6 - len(flattened))
 
-    all_matches = [
-        {**m, 'source': 'description'} for m in _extract_candidate_with_context(description or "")
-    ] + [
-        {**m, 'source': 'title'} for m in _extract_candidate_with_context(title or "")
-    ]
 
-    all_matches = [m for m in all_matches if m['year'] <= date_uploaded]
-    if not all_matches:
-        return None, 0
 
-    patterns = lambda m, years: {
-        # reward positive patterns
-        # 'end_of_line': max(0, 20 - (len(m['line']) - m['end'])),
-        # 'start_of_line': max(0, 15 - m['start']), #must fix indexes because they are word relative
 
-        'bracket_before': 13 if m['word'].endswith(']') else 0,
-        'bracket_after': 14 if m['word'].startswith('[') else 0,
-        'parenth_before': 7 if m['word'].endswith(')') else 0,
-        'parenth_after': 8 if m['word'].startswith('(') else 0,
-        'single_on_line': 10 if (dates := re.findall(r'\d{4}', m['line'])) and len(dates) == 1 and dates[0] == str(m['year']) else 0,
-        'in_title': 5 if m.get('source') == 'title' else 0,
-        'has_smaller_in_description': 6 if years and m['year'] > min(years) else 0,
-        'has_bigger_in_description': 6 if years and m['year'] < max(years) else 0,
-        'has_date_on_line': 28 if 'date' in m['line'].lower() else 0,
-        'has_year_on_line': 28 if 'year' in m['line'].lower() else 0,
-        'has_field': 30 if any(pat in m['sentence'].lower() for pat in ['produced', 'published', 'created', 'taken']) else 0,
-        'probable_range': 30 * np.exp(-((1925 - m['year']) ** 2) / (2 * 150 ** 2)),
-        'circa': 6 if 'circa' in m['sentence'].lower() else 0,
-        # punish negative patterns
-        'serial_numbers' : -80 if isSerial(m['word']) else 0,
-        'PX': -40 if 'PX' in m['sentence'] else 0,
-        'CO': -40 if 'CO' in m['sentence'] else 0, 
-        'ref': -40 if 'ref' in m['sentence'].lower() else 0,
-        'donated': -50 if any(pat in m['sentence'].lower() for pat in ['donated', 'donation', 'transfer', 'loaned']) else 0 ,
-        'number': -50 if any(pat in m['sentence'].lower() for pat in ['number', 'call']) else 0,
-        "dollar": -50 if '$' in m['sentence'] else 0,
-        "street": -40 if any(pat in m['sentence'].lower() for pat in['street', 'avenue', 'road', 'location']) else 0,
-    }
 
-    years_in_desc = [m['year'] for m in all_matches if m['source'] == 'description']
-    scored_matches = [{'match': m, 'score_by_pattern': p, 'total_score': sum(p.values())} 
-                      for m, p in [(m, patterns(m, years_in_desc)) for m in all_matches]]
 
-    if not scored_matches:
-        return None, 0
-    # DEBUG PRINT -----------------------------------
-    # if "Postcard. Mt Ngauruhoe, from Ruapehu, N.I.M.T Rly. Photo by H Winkelmann. F T series no. 1179. Printed in England [ca 1905-1914]." in title:
-    #     print(f"{c.BLUE} {scored_matches} {c.RESET}")
-    # END DEBUG PRINT -------------------------------
-    top_scored = max(scored_matches, key=lambda x: x['total_score'])
-    if top_scored['total_score'] < 0:
-        return None, top_scored['total_score']
-    top_matches = [m for m in scored_matches if m['total_score'] == top_scored['total_score']]
-    top_years = sorted({m['match']['year'] for m in top_matches})
-    prdy =  top_years[0] if len(top_years) == 1 else int(round(mean(top_years)))
-    return int(prdy), top_scored['total_score']
+
 """
 Technically returns the wrong date, but I will do  nothing about it:
 https://www.flickr.com/photos/134017397@N03/26282016448 "Aug. 24 1003" -> 1003
