@@ -151,7 +151,8 @@ class PersistentImageCache:
 
         if path.exists():
             with path.open("rb") as f:
-                img = Image.open(f).convert("RGB")
+                img = Image.open(f)
+                img.convert("RGB")
                 img.load()
 
         else:
@@ -193,7 +194,7 @@ class PersistentImageCache:
             self._mem_put(url, img)
         return img
 
-    def get_images(self, urls: list[str], download_missing=False, fast_cache=False, disk_save=False):
+    def get_images(self, urls: list[str], download_missing=False, fast_cache=False, disk_save=False, silent=True):
         imgs = [None] * len(urls)
 
         def worker(i, url):
@@ -213,7 +214,6 @@ class PersistentImageCache:
                 executor.submit(worker, i, url)
                 for i, url in enumerate(urls)
             ]
-
             for future in tqdm(
                 as_completed(futures),
                 total=len(futures),
@@ -222,6 +222,7 @@ class PersistentImageCache:
                     if download_missing
                     else "Retrieving images from disk"
                 ),
+                disable=silent,
             ):
                 i, img = future.result()
                 imgs[i] = img
