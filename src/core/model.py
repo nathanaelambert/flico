@@ -39,6 +39,13 @@ ml_photo_table = Table(
     Column("reg_n_pred_date", Integer),
     Column("qwen3_pred_date", Integer),
     Column("descr_pred_date", Integer),
+    Column("descr_pred_date_1", Integer),
+    Column("descr_pred_date_2", Integer),
+
+    Column("p_descr_date", Float),
+    Column("p_descr_date_1", Float),
+    Column("p_descr_date_2", Float),
+
 
     Column("is_slow_download", Boolean),
 
