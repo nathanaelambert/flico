@@ -24,6 +24,8 @@ ml_photo_table = Table(
     Column("mapillary_compass_angle", Float),
     Column("mapillary_captured_at", BigInteger),
     Column("mapillary_pic_url", Text),
+    Column("p_building_given_descr", Float),
+    Column("mapillary_candidates", Integer),
 
     Column("is_test_set", Boolean),  # deprecated ?
 
