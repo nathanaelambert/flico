@@ -62,3 +62,13 @@ def _print_query_log(conn, cursor, statement, parameters, context, executemany):
         print(f"User '{user}' {action} {rows} rows into {table}")
     else:
         print(f"User '{user}' SELECT from query")
+
+def get_photos_where(user: str, clause='')-> pd.DataFrame:
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+    """ + clause)
+    df = pd.read_sql_query(query, get_engine(user))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
