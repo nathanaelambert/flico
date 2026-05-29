@@ -12,6 +12,23 @@ def flickr_photo() -> pd.DataFrame:
     """)
     return pd.read_sql_query(query, get_engine("trainer"))
 
+def geo_data() -> pd.DataFrame:
+    """Photos with geo data"""
+    query = text("""--sql
+        SELECT * FROM photo AS P
+        JOIN machine_learning_photo AS MLP 
+        ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
+                SELECT * FROM photo AS P
+        WHERE P.latitude IS NOT NULL
+        AND P.longitude IS NOT NULL
+        AND P.latitude  != 0
+        AND P.longitude != 0
+    """)
+    df = pd.read_sql_query(query, get_engine("trainer"))
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df
+
+
 def photo_to_group() -> pd.DataFrame:
     """Photos with cluster id that needs to be grouped if they are the same building"""
     query = text("""--sql
