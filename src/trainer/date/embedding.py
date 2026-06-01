@@ -11,8 +11,8 @@ import numpy as np
 
 from ..db import update_ml_photo
 
-_BATCH_SIZE = 256
-_TIMEOUT = 200
+_BATCH_SIZE = 512
+_TIMEOUT = 2000
 
 def siglip(df: pd.DataFrame, cache): 
     """Encode images URL with SigLIP model"""
@@ -37,6 +37,7 @@ def siglip(df: pd.DataFrame, cache):
             try:
                 _process_batch(df, batch_df, model, processor, cache, device)
             except TimeoutError:
+                print("timeout")
                 break
             finally:
                 pbar.update(len(batch_mask))
@@ -44,7 +45,7 @@ def siglip(df: pd.DataFrame, cache):
 @timeout_decorator.timeout(_TIMEOUT, timeout_exception=TimeoutError)
 def _process_batch(df, batch_df, model, processor, cache, device):
     urls = batch_df["url_n"].tolist()
-    images = cache.get_images(urls, download_missing=True, fast_cache=False, disk_save=False, silent=True)
+    images = cache.get_images(urls, download_missing=True, fast_cache=False, disk_save=False, silent=False)
     embeddings = _siglip_embeddings(images, processor, model, device)
     batch_df["sig_lip_vect_n"] = embeddings
     updated_rows = batch_df[batch_df["sig_lip_vect_n"].notna()
