@@ -152,8 +152,6 @@ def fast_mapillary():
         db.update_ml_photo(matched, 'mapillary_compass_angle')
         db.update_ml_photo(matched, 'mapillary_pic_url')
 
-    
-
 def building_labeling():
     print(f"{c.BLUE}Looking for pics needing a building label...{c.RESET}")
     need_label = db.photo_to_label_as_building()
@@ -182,11 +180,11 @@ def grouping():
     db.update_ml_photo(grouped, 'is_central')
 
 def date_embedding():
+    cache = crawler.PersistentImageCache("flickr_commons") 
     print(f"{c.BLUE}Looking for pics needing a siglip embedding...{c.RESET}")
     need_siglip = db.photo_to_embed_with_siglip()
     print(f"{c.BLUE}Found {len(need_siglip)} pictures. \n Generating embeddings...{c.RESET}")
-    db.update_ml_photo(date.embedding.siglip(need_siglip), 'sig_lip_vect_n')
-
+    date.siglip(need_siglip, cache)
 
 def _dating_training():
     valid_dates = date.processing.filter(db.flickr_photo())
@@ -232,17 +230,16 @@ def _predict_date_description():
     db.update_ml_photo(predictions, 'descr_pred_date')
     # db.mark_photo(to_predict)
 
-
 if __name__ == "__main__":    
     # geo_embedding()
     # building_labeling()
     # clustering()
     # add_all()
-    # date_embedding()
+    date_embedding()
     # grouping()
     # fast_grouping()
     # geo_description()
-    fast_mapillary()
+    # fast_mapillary()
 
     # add_geo()
     # geo_embedding()
