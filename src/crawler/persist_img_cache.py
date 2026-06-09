@@ -12,8 +12,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 import json
 
-CONNECTION_TIMEOUT = 5
-READ_TIMEOUT = 8
+CONNECTION_TIMEOUT = 20
+READ_TIMEOUT = 15
 MAX_TIME_PER_URL = 30
 NUMBER_OF_THREADS = 64
 RETRIES = 2
@@ -25,8 +25,8 @@ class Proxy:
 class PersistentImageCache:
     def __init__(self, cache_dir="image_cache"):
         BASE_DIR = Path(__file__).resolve().parent.parent.parent
-        valid_scocks5_path = BASE_DIR / "src" / "crawler" / "valid_socks5.txt"
-        proxy_scores_path =  BASE_DIR / "src" / "crawler" / "proxies_with_scores.json"
+        valid_scocks5_path = BASE_DIR / "src" / "crawler" / "new_valid_proxies.txt"
+        proxy_scores_path =  BASE_DIR / "src" / "crawler" / "new_proxies_With_score.json"
         self.proxy_scores_path = proxy_scores_path
         if proxy_scores_path.exists():
             with open(proxy_scores_path, "r") as f:
