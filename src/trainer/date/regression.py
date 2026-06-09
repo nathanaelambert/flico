@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 import joblib
+from joblib import Parallel, delayed
+import time
+from tqdm import tqdm
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.svm import SVR
@@ -11,27 +14,76 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 from datetime import datetime
 from huggingface_hub import hf_hub_download
 import src.utils.colors as c
+from ...core.db import get_photos_where
+from ..db import update_ml_photo
 
-def svr50_predictions(df: pd.DataFrame)-> pd.DataFrame:
+_BATCH_SIZE = 1000
+def svr50_predictions():
+    for i in range(20):
+        _svr_100k_predictions()
+
+def _svr_100k_predictions():
     """ predicts dates from siglip embedding using SVR trained model"""
-    print(f"Loading HuggingFace model for SVR50 regression...{c.GREY}")
+    print(f"{c.BLUE}Loading HuggingFace model for SVR50 regression...{c.RESET}{c.GREY}")
     model_path = hf_hub_download(
         repo_id="nathanaelambert/svr50siglip320flico-05-2026",
         filename="svr50_siglip320_model.joblib"
     )
     svr_model = joblib.load(model_path)
-    print(f"Model loaded successfully!{c.RESET}")
+    print(f"{c.RESET}{c.BLUE}Model loaded successfully!{c.RESET}")
+    df = get_photos_where(user="trainer", clause="""--sql
+        WHERE reg_n_pred_date is NULL
+        AND sig_lip_vect_n is not NULL
+        LIMIT 100000
+    """)
+    print(f"{c.BLUE}Found {len(df)} pictures with a siglip embedding, needing a prediction{c.RESET}")
+    if len(df) == 0:
+        return df
+    with tqdm(total=len(df), desc="Date predictions", unit="img") as pbar:
+        for start in range(0, len(df), _BATCH_SIZE):
+            batch_mask = df.index[start:start + _BATCH_SIZE]
+            batch_df = df.loc[batch_mask]
+            try:
+                _process_batch(batch_df, svr_model)
+            except Exception as e:
+                print(f"batch failed: {e}")
+                continue
+            finally:
+                pbar.update(len(batch_mask))
+
+def _process_batch(df, svr_model):
+    # t0 = time.perf_counter()
     X = np.stack(df['sig_lip_vect_n'].values)
-    preds = svr_model.predict(X)
-    df = df.copy()
+    # print("stack", time.perf_counter() - t0)
+    # t0 = time.perf_counter()
+    preds = _parallel_predict(svr_model, X, n_jobs=8)
+    # print("predict", time.perf_counter() - t0)
     df['reg_n_pred_date'] = preds
-    print(f"Predicted dates for {len(df)} pictures.")
-    return df
+    updated_rows = df[df["reg_n_pred_date"].notna()]
+    if len(updated_rows):
+        # t0 = time.perf_counter()
+        update_ml_photo(updated_rows, "reg_n_pred_date", silent=True)
+        # print("db", time.perf_counter() - t0)
+        
+def _parallel_predict(model, X, n_jobs=8):
+    chunks = np.array_split(X, n_jobs)
+
+    preds = Parallel(n_jobs=n_jobs, prefer="processes")(
+        delayed(model.predict)(chunk)
+        for chunk in chunks
+    )
+    return np.concatenate(preds)
+
+
+
+
+
 
 def train_model(train: pd.DataFrame, test: pd.DataFrame):
     ## NOT TESTED
     """trains and evaluate a regression model given the provided data"""
-    svr = SVR(kernel="rbf", C=50.0, gamma="scale")
+
+
     svr, mae_svr = _date_taken_train_model(train, svr)
     joblib.dump(svr, "models/svr50_siglip320_model.joblib")
     test_preds_svr, metrics_svr = _evaluate(svr, test)
