@@ -38,14 +38,14 @@ def siglip(df: pd.DataFrame, cache):
                 _process_batch(df, batch_df, model, processor, cache, device)
             except TimeoutError:
                 print("timeout")
-                break
+                continue
             finally:
                 pbar.update(len(batch_mask))
 
 @timeout_decorator.timeout(_TIMEOUT, timeout_exception=TimeoutError)
 def _process_batch(df, batch_df, model, processor, cache, device):
     urls = batch_df["url_n"].tolist()
-    images = cache.get_images(urls, download_missing=True, fast_cache=False, disk_save=False, silent=False)
+    images = cache.get_images(urls, download_missing=True, fast_cache=False, disk_save=False, silent=True)
     embeddings = _siglip_embeddings(images, processor, model, device)
     batch_df["sig_lip_vect_n"] = embeddings
     updated_rows = batch_df[batch_df["sig_lip_vect_n"].notna()
@@ -55,6 +55,7 @@ def _process_batch(df, batch_df, model, processor, cache, device):
 
 
 def _siglip_embeddings(images, processor, model, device):
+    torch.set_num_threads(8)
     valid_positions = []
     valid_images = []
     for i, img in enumerate(images):
