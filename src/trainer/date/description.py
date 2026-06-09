@@ -2,27 +2,58 @@ import pandas as pd
 import re
 from statistics import mean
 from typing import Optional
+from tqdm import tqdm
 import numpy as np
 import src.utils.colors as c
+from ...core.db import get_photos_where
+from ..db import rm_data_ml_photo, update_ml_photo
+from concurrent.futures import ProcessPoolExecutor
 
-def predictions(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.copy()
+def context_predictions(rm_existing=False):
+    cols = ["descr_pred_date", "p_descr_date", 
+        "descr_pred_date_1", "p_descr_date_1",
+        "descr_pred_date_2", "p_descr_date_2"]
+    if rm_existing:
+        for col in cols:
+            rm_data_ml_photo(col)
+    for i in tqdm(range(300), desc='description', total=300, unit='batch'):
+        _process_a_batch(cols)
+
+def _process_a_batch(cols: list[str], silent=True):
+    df = get_photos_where(user="trainer", clause="""--sql
+        WHERE descr_pred_date is NULL
+        ORDER BY RANDOM()
+        LIMIT 10000
+    """)
+    
     df['date_upload_year'] = pd.to_datetime(df['date_upload'], unit='s').dt.year
-    df = df[df['descr_pred_date'].isna()]
     if df.empty:
         return df
+        
     results = df.apply(
-        lambda row: predict_dates(row['description'], row['title'], row['date_upload_year'], row['owner_nsid']), 
+        lambda row: predict_dates(row['description'], row['title'], row['tags'], row['date_upload_year'], row['owner_nsid']), 
         axis=1
     )
-    df[["descr_pred_date", "p_descr_date", 
-        "descr_pred_date_1", "p_descr_date_1"
-        "descr_pred_date_2", "p_descr_date_2"
-    ]] = pd.DataFrame(results.tolist(), index=df.index)
-    return df
+    results = results.apply(lambda x: [None] * 6 if x is None else x)
+    df[cols] = pd.DataFrame(results.tolist(), index=df.index)
+    df = df.replace({np.nan: None})
+    for col in cols:
+        update_ml_photo(df, col)
+    if not silent:
+        pd.set_option('display.max_rows', None)
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.max_colwidth', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.expand_frame_repr', False)
+        df['page'] = df.apply(lambda r : f"https://www.flickr.com/photos/{r['owner_nsid']}/{r['id']}", axis=1 )
+        df['year'] = pd.to_datetime(df['date_taken'], errors='coerce').dt.year
+        df["diff"] = (df["year"] - df["descr_pred_date"]).abs()
+        df = df.sort_values("p_descr_date", ascending=True).drop(columns="diff")
+        print(df[['reg_n_pred_date','p_descr_date', 'descr_pred_date', 'year', 'page', 
+                'p_descr_date_1', 'descr_pred_date_1', 'p_descr_date_2', 'descr_pred_date_2']].head(50))
       
 
-def predict_dates(description: str, title: str, date_uploaded: int, owner_nsid: str) -> list[int | float]: 
+def predict_dates(description: str, title: str, tags: str, date_uploaded: int, owner_nsid: str) -> list[int | float]: 
     """
     Assigns a score to each candidate date (4 consecutive digits) in the description and title based on ad hoc PATTERNS.
     Return dictionnary key= candidate dates, values = probabilty of match
@@ -31,17 +62,20 @@ def predict_dates(description: str, title: str, date_uploaded: int, owner_nsid: 
     if owner_nsid == "99115493@N08":
         return None # WikiSinaloa has a bad habbit of having a stupid 4 digit number as title
     description = _sub_keywords(description)
-    all_matches = extract_four_digits_sequences_with_scores(description, title)
+    all_matches = _extract_four_digits_sequences_with_scores(description, title, tags, date_uploaded)
     if not all_matches:
         return None
     score_matches = _score_matches(all_matches)
-    proba_per_year_best_3 = _scores_to_proba_best_3(score_matches)
+    return _scores_to_proba_best_3(score_matches)
+
 
 def _sub_keywords(description : str)-> str:
     description = re.sub(r'(?<!\d)(\d{3})?-\?', r'\g<1>5', description) # Optional: approximate decade to midpoint
     description = re.sub(r'(?<=\s)[Nn]o\.? ', 'Number', description)
     description = re.sub(r'(?<=\s)[Rr]ef\.? ', 'Reference', description)
     description = re.sub(r'(?<=\s)[cC]a?\.', 'Circa ', description)
+    description = re.sub(r'\[(?:[cC]a?)\s*(\d{4})\]',  r'Circa \1',   description)
+
     description = re.sub(r'\d{3} - LEFT', 'garbage', description)
     return description
 
@@ -57,11 +91,13 @@ def _extract_candidate_with_context(text):
         for m in re.finditer(r'(?<![A-Za-z0-9_])[12]\d{3}(?![0-9])', word)
     ]
 
-def _extract_four_digits_sequences_with_scores(description: str, title: str):
+def _extract_four_digits_sequences_with_scores(description: str, title: str, tags: str, date_uploaded: int):
     all_matches = [
         {**m, 'source': 'description'} for m in _extract_candidate_with_context(description or "")
     ] + [
         {**m, 'source': 'title'} for m in _extract_candidate_with_context(title or "")
+    ] + [
+        {**m, 'source': 'tags'} for m in _extract_candidate_with_context(tags or "")
     ]
     return [m for m in all_matches if m['year'] <= date_uploaded]
     
@@ -73,14 +109,16 @@ def _score_matches(all_matches):
         'parenth_after'             : +8 if m['word'].startswith('(') else 0,
         'single_on_line'            : +10 if (dates := re.findall(r'\d{4}', m['line'])) and len(dates) == 1 and dates[0] == str(m['year']) else 0,
         'in_title'                  : +5 if m.get('source') == 'title' else 0,
+        'in_tags'                   : +12 if m.get('source') == 'tags' else 0,
         'has_smaller_in_description': +6 if years and m['year'] > min(years) else 0,
         'has_bigger_in_description' : +6 if years and m['year'] < max(years) else 0,
         'has_date_on_line'          : +28 if 'date' in m['line'].lower() else 0,
-        'has_year_on_line'          : +28 if 'year' in m['line'].lower() else 0,
+        'has_year_on_line'          : +28 if any(pat in m['line'].lower()     for pat in ['year', 'jaar', 'année']) else 0,
         'has_field'                 : +30 if any(pat in m['sentence'].lower() for pat in ['produced', 'published', 'created', 'taken']) else 0,
         'probable_range'            : +30 * np.exp(-((1925 - m['year']) ** 2) / (2 * 150 ** 2)),
         'circa'                     : +6 if 'circa' in m['sentence'].lower() else 0,
         # punish negative patterns
+        'futuristic'                : -300 if m['year'] > 2030 else 0,
         'serial_numbers'            : -80 if _isSerial(m['word']) else 0,
         'PX'                        : -40 if 'PX' in m['sentence'] else 0,
         'CO'                        : -40 if 'CO' in m['sentence'] else 0, 
@@ -128,14 +166,14 @@ def _isSerial(word: str) -> bool:
 
 def _scores_to_proba_best_3(scored_matches):
     grouped = {}
-    for match in score_matches:
-        grouped.setdefault([match["match"]["year"]], []).append(match["total_score"])
+    for match in scored_matches:
+        grouped.setdefault(match["match"]["year"], []).append(match["total_score"])
     
     combined_probas = {}
     for year, score_list in grouped.items():
-        best_score = max(score for score in score_list)
-        combined_non_zero_score = best_score + 2*len(score_list) + 400
-        proba = min(0.9999, combined_non_zero_score/591)
+        best_score = max(score_list)
+        combined_non_zero_score = best_score + 2*len(score_list) + 100
+        proba = max(0.0, min(0.9999, combined_non_zero_score/191))
         combined_probas[year] = proba
     
     ordered_probas = dict(sorted(combined_probas.items(), key=lambda i: i[1], reverse=True))

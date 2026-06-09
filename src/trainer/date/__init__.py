@@ -1,5 +1,5 @@
 from .processing import filter
 from .embedding import siglip
 from .benchmark import qwen3
-from .description import predictions, predict_dates
+from .description import context_predictions
 from .regression import train_model, svr50_predictions
