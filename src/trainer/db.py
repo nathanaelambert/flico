@@ -13,8 +13,7 @@ from src.core.decorator import memoize
 def flickr_photo_id() -> pd.DataFrame:
     """Every picture in the db"""
     query = text("""--sql
-        SELECT *
-        id, owner_nsid FROM photo
+        SELECT id, owner_nsid FROM photo
     """)
     return pd.read_sql_query(query, get_engine("trainer"))
 
@@ -155,6 +154,7 @@ def photo_to_embed_with_siglip() -> pd.DataFrame:
         JOIN machine_learning_photo AS MLP 
         ON P.owner_nsid = MLP.owner_nsid AND P.id = MLP.id
         WHERE MLP.sig_lip_vect_n IS NULL
+        ORDER BY RANDOM()
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]
@@ -226,10 +226,11 @@ def mark_photo(df: pd.DataFrame):
         chunksize=1000
     )
 
-def update_ml_photo(df: pd.DataFrame, target_col: str):
+def update_ml_photo(df: pd.DataFrame, target_col: str, silent=False):
     """Update single column in ml_photo_table using df with PK + target_col"""
     if df.empty:
-        print(f"No rows modified for column '{target_col}' (DataFrame empty)")
+        if not silent:
+            print(f"No rows modified for column '{target_col}' (DataFrame empty)")
         return
     update_stmt = (
         update(ml_photo_table)
@@ -240,7 +241,8 @@ def update_ml_photo(df: pd.DataFrame, target_col: str):
     # print(f"{c.BLUE} {df_renamed.columns.tolist()} {c.RESET}")
     with get_engine("trainer").begin() as conn:
         result = conn.execute(update_stmt, df_renamed.to_dict('records'))
-    print(f"Updated column '{target_col}' : {c.GREEN}{result.rowcount}{c.RESET} rows affected.")
+    if not silent:
+        print(f"Updated column '{target_col}' : {c.GREEN}{result.rowcount}{c.RESET} rows affected.")
 
 
 def rm_data_ml_photo(column_name: str) -> None:
@@ -254,7 +256,7 @@ def rm_data_ml_photo(column_name: str) -> None:
         """))
         affected += result.rowcount
         conn.commit()
-    print(f"Removed data in column {column_name}. {affected} rows affected")
+    print(f"Removed data in column {column_name[:30]:<30}. {affected} rows affected")
         
     
 
