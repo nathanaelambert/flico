@@ -9,15 +9,15 @@ proxy list from https://github.com/TheSpeedX/PROXY-List/blob/master/socks5.txt
 """
 def filter_valid_proxies():
     BASE_DIR = Path(__file__).resolve().parent
-    socks5_path = BASE_DIR / "socks5.txt" 
-    valid_scocks5_path = BASE_DIR / "valid_socks5.txt"
+    socks5_path = BASE_DIR / "new_proxies.txt" 
+    valid_scocks5_path = BASE_DIR / "new_valid_proxies.txt"
 
 
     with open(socks5_path, "r") as f:
         proxy_list = [
             {
-                "http": f"socks5://{line.strip()}",
-                "https": f"socks5://{line.strip()}",
+                "http": f"{line.strip()}",
+                "https": f"{line.strip()}",
             }
             for line in f
             if line.strip()
@@ -30,7 +30,7 @@ def filter_valid_proxies():
     with tqdm(total=len(proxy_list), desc="Proxy sorting", unit="proxy") as pbar:
         for _ in range(len(proxy_list)):
             proxy = next(proxy_gen)
-            proxy_str = proxy["http"].replace("socks5h://", "")
+            proxy_str = proxy["http"]
             
             try:
                 response = requests.get(
