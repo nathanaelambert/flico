@@ -186,6 +186,8 @@ def date_embedding():
     print(f"{c.BLUE}Found {len(need_siglip)} pictures. \n Generating embeddings...{c.RESET}")
     date.siglip(need_siglip, cache)
 
+    
+
 def _dating_training():
     valid_dates = date.processing.filter(db.flickr_photo())
     db.use_for_date(valid_dates)
@@ -235,11 +237,13 @@ if __name__ == "__main__":
     # building_labeling()
     # clustering()
     # add_all()
-    date_embedding()
+    # date_embedding()
     # grouping()
     # fast_grouping()
     # geo_description()
     # fast_mapillary()
+    # date.svr50_predictions()
+    date.context_predictions()
 
     # add_geo()
     # geo_embedding()
