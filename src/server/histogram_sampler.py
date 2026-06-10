@@ -29,8 +29,8 @@ elif evaluation == 4:
     df = df.set_index(['true_date', 'descr_pred_date']).sort_index()
 
 # Axis range and bin width
-MIN_YEAR, MAX_YEAR = 1800, 2025
-BIN_WIDTH = 5  # 5‑year bins
+MIN_YEAR, MAX_YEAR = 1500, 2025
+BIN_WIDTH = 25  # 5‑year bins
 NBINS = (MAX_YEAR - MIN_YEAR) // BIN_WIDTH  # 45
 
 app = Dash(__name__)
