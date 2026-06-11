@@ -46,6 +46,7 @@ ml_photo_table = Table(
     Column("p_descr_date_1", Float),
     Column("p_descr_date_2", Float),
     Column("human_pred_date", Integer),
+    Comuln("corrected_year", Integer),
     
 
 

@@ -158,6 +158,7 @@ CREATE TABLE machine_learning_photo (
     p_descr_date_1 DOUBLE PRECISION,
     p_descr_date_2 DOUBLE PRECISION,
     human_pred_date INT, --human annotaded date
+    corrected_year INT, -- year corrected using multiple information from columns
 
 
 
