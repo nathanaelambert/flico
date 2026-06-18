@@ -41,6 +41,7 @@ dependencies = [
     "pysocks",
     "mercantile",
     "vt2geojson",
+    "umap-learn",
 ]
 
 [tool.setuptools.packages.find]
