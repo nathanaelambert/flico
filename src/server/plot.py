@@ -5,6 +5,62 @@ from sqlalchemy import text
 
 from ..core.db import get_engine
 
+from textwrap import wrap
+
+
+def plot_top_owners_histogram():
+    sql = """--sql
+    SELECT
+        owner_nsid,
+        MAX(owner_name) AS owner_name,
+        COUNT(*) AS n
+    FROM photo
+    GROUP BY owner_nsid
+    ORDER BY n DESC
+    LIMIT 15
+    """
+
+    with get_engine("server").connect() as conn:
+        df = pd.read_sql(text(sql), conn)
+
+    labels = [
+        "\n".join(wrap(str(name), width=25))
+        if pd.notna(name)
+        else "Unknown"
+        for name in df["owner_name"]
+    ]
+
+    counts = df["n"].to_numpy()
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    ax.bar(
+        labels,
+        counts,
+        color="black",
+        width=0.8,
+        linewidth=0,
+    )
+
+    ax.set_xlabel("Institution")
+    ax.set_ylabel("Photo count")
+    ax.set_title(
+        f"Top 15 institutions by number of photos"
+    )
+
+    ax.tick_params(axis="x", rotation=65)
+
+    plt.tight_layout()
+
+    output_file = "exported_plots/top_owners_histogram.png"
+
+    plt.savefig(
+        output_file,
+        dpi=300,
+        bbox_inches="tight",
+    )
+
+    plt.close()
 
 def plot_descr_pred_date_histogram():
     sql = """--sql
@@ -121,6 +177,62 @@ def plot_descr_pred_date_histogram_69():
     plt.savefig(output_file, dpi=300, bbox_inches="tight")
     plt.close()
 
+def plot_corrected_pred_date_histogram():
+    sql = """--sql
+    SELECT
+        corrected_year,
+        count(*) AS n
+    FROM machine_learning_photo
+    WHERE corrected_year IS NOT NULL
+    GROUP BY corrected_year
+    ORDER BY corrected_year
+    """
+
+    with get_engine("server").connect() as conn:
+        df = pd.read_sql(text(sql), conn)
+
+    years = df["corrected_year"].astype(int).to_numpy()
+    counts = df["n"].to_numpy()
+
+    fig, ax = plt.subplots(figsize=(14, 6))
+    colors = [
+        "red" if year % 10 == 0 else "black"
+        for year in years
+    ]
+
+    ax.bar(
+        years,
+        counts,
+        width=1.0,
+        color=colors,
+        edgecolor=colors,
+        linewidth=0.5,
+    )
+
+    xmin = 1600
+    xmax = 2026
+
+    ax.set_xlim(xmin-1, xmax+1)
+    ax.set_ylim(0, 50000)
+
+    tick_start = (xmin // 25) * 25
+    tick_end = ((xmax + 24) // 25) * 25
+
+    ticks = np.arange(tick_start, tick_end + 1, 25)
+
+    ax.set_xticks(ticks)
+    ax.set_yticks(np.arange(0, 50001, 10000))
+    ax.tick_params(axis="x", rotation=45)
+
+    ax.set_xlabel("Predicted year")
+    ax.set_ylabel("Count")
+    ax.set_title(f"Distribution of corrected date (n={counts.sum():,})")
+
+    output_file = "exported_plots/corrected_pred_date_histogram.png"
+
+    plt.tight_layout()
+    plt.savefig(output_file, dpi=300, bbox_inches="tight")
+    plt.close()
 
 def plot_date_taken_histogram():
     sql = """--sql
@@ -262,10 +374,10 @@ def plot_probability_histogram(
     )
 
     ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
+    # ax.set_ylim(0, 1)
 
     ax.set_xticks(np.arange(0, 1.01, 0.1))
-    ax.set_yticks(np.arange(0, 1.01, 0.1))
+    # ax.set_yticks(np.arange(0, 1.01, 0.1))
 
     ax.set_xlabel("Probability")
     ax.set_ylabel("Density")
@@ -276,10 +388,12 @@ def plot_probability_histogram(
     plt.close()
 
 if __name__ == "__main__":
-    plot_descr_pred_date_histogram()
-    plot_descr_pred_date_histogram_69()
-    plot_date_taken_histogram()
-    plot_date_agreement_histogram()
+    # plot_top_owners_histogram()
+    # plot_corrected_pred_date_histogram()
+    # plot_descr_pred_date_histogram()
+    # plot_descr_pred_date_histogram_69()
+    # plot_date_taken_histogram()
+    # plot_date_agreement_histogram()
 
     plot_probability_histogram(
         "p_descr_date",
