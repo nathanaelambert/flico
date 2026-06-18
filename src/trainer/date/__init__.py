@@ -3,3 +3,4 @@ from .embedding import siglip
 from .benchmark import qwen3
 from .description import context_predictions
 from .regression import train_model, svr50_predictions
+from .combined import combined_predictions
