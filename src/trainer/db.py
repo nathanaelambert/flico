@@ -63,6 +63,7 @@ def photo_to_label_as_building() -> pd.DataFrame:
         AND P.latitude  != 0
         AND P.longitude != 0
         AND MLP.is_building IS NULL
+        AND MLP.is_slow_download IS NOT TRUE
     """)
     df = pd.read_sql_query(query, get_engine("trainer"))
     df = df.loc[:, ~df.columns.duplicated()]

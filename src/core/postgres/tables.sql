@@ -154,15 +154,13 @@ CREATE TABLE machine_learning_photo (
     descr_pred_date INT,  --BEST GUESS date predicted by NLP algo reading the text description
     descr_pred_date_1 INT,  --2nde best guess
     descr_pred_date_2 INT , --3rd best guess
-    p_descr_date DOUBLE PRECISION, --guess confidence
+    p_descr_date DOUBLE PRECISION, --guess probability score
     p_descr_date_1 DOUBLE PRECISION,
     p_descr_date_2 DOUBLE PRECISION,
     human_pred_date INT, --human annotaded date
     corrected_year INT, -- year corrected using multiple information from columns
 
 
-
-    is_slow_download BOOLEAN, --when download is slow to avoid trying to download it right away
-
-    is_test_set BOOLEAN, --deprecated
+    is_slow_download BOOLEAN, --when download is slow, picture is flagged and ignored on later processing stages
+    is_test_set BOOLEAN, --whether the data was part of the 1850-2026 test set for visual evaluation
 );

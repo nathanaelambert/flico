@@ -1,5 +1,6 @@
 import pandas as pd
 import re
+import gc
 from statistics import mean
 from typing import Optional
 from tqdm import tqdm
@@ -18,6 +19,8 @@ def context_predictions(rm_existing=False):
             rm_data_ml_photo(col)
     for i in tqdm(range(300), desc='description', total=300, unit='batch'):
         _process_a_batch(cols)
+        
+
 
 def _process_a_batch(cols: list[str], silent=True):
     df = get_photos_where(user="trainer", clause="""--sql
@@ -51,9 +54,13 @@ def _process_a_batch(cols: list[str], silent=True):
         df = df.sort_values("p_descr_date", ascending=True).drop(columns="diff")
         print(df[['reg_n_pred_date','p_descr_date', 'descr_pred_date', 'year', 'page', 
                 'p_descr_date_1', 'descr_pred_date_1', 'p_descr_date_2', 'descr_pred_date_2']].head(50))
+
+        del results
+        del df
+        gc.collect()
       
 
-def predict_dates(description: str, title: str, tags: str, date_uploaded: int, owner_nsid: str) -> list[int | float]: 
+def predict_dates(description: str, title: str, tags: str, date_uploaded: int, owner_nsid: str, silent=True) -> list[int | float]: 
     """
     Assigns a score to each candidate date (4 consecutive digits) in the description and title based on ad hoc PATTERNS.
     Return dictionnary key= candidate dates, values = probabilty of match
@@ -66,17 +73,70 @@ def predict_dates(description: str, title: str, tags: str, date_uploaded: int, o
     if not all_matches:
         return None
     score_matches = _score_matches(all_matches)
-    return _scores_to_proba_best_3(score_matches)
+    probas = _scores_to_proba_best_3(score_matches, owner_nsid, silent=silent)
+    if not silent:
+        for match in score_matches:
+            year = match["match"]["year"]
+            score = match["total_score"]
+            print(f"match: {year}, score: {score}, context: {match['match']['sentence']}")
+        print(probas)
+    return probas
 
 
 def _sub_keywords(description : str)-> str:
+    description = re.sub('--', ' -- ', description)
     description = re.sub(r'(?<!\d)(\d{3})?-\?', r'\g<1>5', description) # Optional: approximate decade to midpoint
     description = re.sub(r'(?<=\s)[Nn]o\.? ', 'Number', description)
     description = re.sub(r'(?<=\s)[Rr]ef\.? ', 'Reference', description)
     description = re.sub(r'(?<=\s)[cC]a?\.', 'Circa ', description)
     description = re.sub(r'\[(?:[cC]a?)\s*(\d{4})\]',  r'Circa \1',   description)
-
     description = re.sub(r'\d{3} - LEFT', 'garbage', description)
+    description = re.sub(r'(dreerswholesalep)(1\d{3})(dree)', r'\ndate year \2\n', description)
+    description = re.sub(r'(dreersgardenbook)(1\d{3})(dree)', r'\ndate year \2\n', description)
+    description = re.sub(r'(descriptivecatal)(1\d{3})(yoko)', r'\ndate year \2\n', description)
+    description = re.sub(r'(d7d8verslagenenm03akad)', '\ndate year 1890\n', description)
+    description = re.sub(r'(countrygentleman01lond)', '\ndate year 1868\n', description)
+    description = re.sub(r'(compterendu82asso)', 'compterendu28asso', description)
+    description = re.sub(r'(compterendu)(\d{2})(asso)', lambda m: f"\ndate year {1871 + int(m.group(2))}\n", description)
+    description = re.sub(r'(dertropenpflanze)(\d{2})(berl)', lambda m: f"\n date year {1896 + int(m.group(2))}\n", description)
+    description = re.sub(r'(dertropenpflanze13berl)', '\ndate year 1909\n', description)
+    description = re.sub(r'(dertropenpflanze11berl)', '\ndate year 1907\n', description)
+    description = re.sub(r'(dertropenpflanze09berl)', '\ndate year 1905\n', description)
+    description = re.sub(r'(dertropenpflanze08berl)', '\ndate year 1904\n', description)
+    description = re.sub(r'(Descriptivecata00WeebE)', '\ndate year 1905\n', description)
+    description = re.sub(r'(Descriptivecata00WeebA)', '\ndate year 1905\n', description)
+    description = re.sub(r'(Descriptivecata00WeebD)', '\ndate year 1904\n', description)
+    description = re.sub(r'(Descriptivecata00WeebB)', '\ndate year 1908\n', description)
+    description = re.sub(r'(Descriptivecata00Weeb)',  '\ndate year 1906\n', description)
+    description = re.sub(r'(DLandrethSeedCo00LandA)', '\ndate year 1920\n', description)
+    description = re.sub(r'(DLandrethSeedCo00LandB)', '\ndate year 1894\n', description)
+    description = re.sub(r'(DLandrethSeedCo00LandC)', '\ndate year 1912\n', description)
+    description = re.sub(r'discovery0102londuoft', '\ndate year 1920-1921\n', description)
+    description = re.sub(r'collectedpaperso00pope', '\ndate year 1911.1914\n', description)
+    description = re.sub(r'denkschriftender07kais', '\ndate', description)
+    description = re.sub(r'(dieinsektenweltz00inte)', '\ndate year 1885-1888 \n', description)
+    description = re.sub(r'(bookyear)(\d{4})', r'\ndate year \2\n', description)
+    description = re.sub(r'Was Founded in 1854', r'', description)
+    description = re.sub(r'atlases produced between 1500 and 1824', r'', description)
+    description = re.sub(r'the first exploration party which passed through in 1798', r'', description)
+    description = re.sub(r'Congress established the Department of the Navy on Apr. 30, 1798.', r'', description)
+    description = re.sub(
+        r"\b(?:wwi|ww1|world war i|world war one|first world war)\b",
+        "\n1914-1918\n",
+        description,
+        flags=re.IGNORECASE,
+    )
+    description = re.sub(
+        r"\b(?:wwii|ww2|world war ii|world war two|second world war)\b",
+        "\n1939-1945\n",
+        description,
+        flags=re.IGNORECASE,
+    )
+
+    
+
+    
+
     return description
 
 def _extract_candidate_with_context(text):
@@ -112,12 +172,14 @@ def _score_matches(all_matches):
         'in_tags'                   : +12 if m.get('source') == 'tags' else 0,
         'has_smaller_in_description': +6 if years and m['year'] > min(years) else 0,
         'has_bigger_in_description' : +6 if years and m['year'] < max(years) else 0,
-        'has_date_on_line'          : +28 if 'date' in m['line'].lower() else 0,
+        'has_date_on_line'          : +28 if any(pat in m['line'].lower()     for pat in ['date', 'datum']) else 0,
         'has_year_on_line'          : +28 if any(pat in m['line'].lower()     for pat in ['year', 'jaar', 'année']) else 0,
         'has_field'                 : +30 if any(pat in m['sentence'].lower() for pat in ['produced', 'published', 'created', 'taken']) else 0,
         'probable_range'            : +30 * np.exp(-((1925 - m['year']) ** 2) / (2 * 150 ** 2)),
         'circa'                     : +6 if 'circa' in m['sentence'].lower() else 0,
         # punish negative patterns
+        'decade'                    : -7 if str(m['year']).endswith('0') else 0,
+        'unknown date'              : -50 if any(pat in m['full_text'].lower() for pat in ['ukjent datering', 'no date recorded']) else 0,
         'futuristic'                : -300 if m['year'] > 2030 else 0,
         'serial_numbers'            : -80 if _isSerial(m['word']) else 0,
         'PX'                        : -40 if 'PX' in m['sentence'] else 0,
@@ -164,7 +226,7 @@ def _isSerial(word: str) -> bool:
     "Eph-E-DRAMA-1899-01." -> True
     """
 
-def _scores_to_proba_best_3(scored_matches):
+def _scores_to_proba_best_3(scored_matches, owner_nsid: str, silent=True):
     grouped = {}
     for match in scored_matches:
         grouped.setdefault(match["match"]["year"], []).append(match["total_score"])
@@ -173,14 +235,86 @@ def _scores_to_proba_best_3(scored_matches):
     for year, score_list in grouped.items():
         best_score = max(score_list)
         combined_non_zero_score = best_score + 2*len(score_list) + 100
-        proba = max(0.0, min(0.9999, combined_non_zero_score/191))
+        reduction_factor = 0.88 if owner_nsid in ['49487266@N07', '61270229@N05'] else 1
+        # San Diego Air and Space and Navy Medicine often have date like numbers
+        proba = max(0.0, min(0.9999, combined_non_zero_score*reduction_factor/191))
         combined_probas[year] = proba
     
     ordered_probas = dict(sorted(combined_probas.items(), key=lambda i: i[1], reverse=True))
+    if not silent:
+        print(ordered_probas)
     flattened = [item for tup in list(ordered_probas.items())[:3] for item in tup]
     return flattened[:6] + [None] * max(0, 6 - len(flattened))
 
 
+if __name__ == "__main__":
+
+    desc = """Find out in our recent Picture This blog post: Coolidge’s Cat: Out of the Bag!.
+
+--------
+
+ 
+
+"Tige" the White House cat and pet of Mrs. Coolidge has been returned.
+
+ 
+
+1924 March 25.
+
+ 
+
+1 photographic print
+
+ 
+
+Summary: Benj. Fink, half-length portrait, standing, facing front, holding "Tige" the White House cat.
+
+ 
+
+Notes:
+
+• Caption continues: “Benj. Fink, guard at the Navy Dept. found Tige promenading around the Navy Bldg. and immediately returned him to the White House. "Tige's" disappearance was broadcasted by Wash. radio stations.”
+
+• In album: 1 March to 30 April 1924, v. 2, Herbert E. French, National Photo Company, p. 25, no. 29633. For more about the album, see: www.loc.gov/pictures/collection/coll/item/2004668683/
+
+• Forms part of: National Photo Company Collection (Library of Congress).
+
+• Original glass negative may be available: LC-F8-29633
+
+ 
+
+Subjects:
+
+• Coolidge, Grace Goodhue,--1879-1957--Animals & pets.
+
+• Pets--1920-1930.
+
+• Cats--Washington (D.C.)--1920-1930.
+
+ 
+
+Format:
+
+• Photographic prints--1920-1930.
+
+• Portrait photographs--1920-1930.
+
+ 
+
+Rights Info: No known restrictions on publication.
+
+ 
+
+Repository: Library of Congress, Prints and Photographs Division, Washington, D.C. 20540 USA, hdl.loc.gov/loc.pnp/pp.print
+
+ 
+
+Higher resolution image is available (Persistent URL): hdl.loc.gov/loc.pnp/cph.3c31880"""
+    title = "How did this cat make the news in 1924? (LOC)"
+    tags = "Library of Congress, Tige, Cat, Presidentia Pets, Pet"
+
+
+    predict_dates(desc, title, tags, 1539091610, "8623220@N02", silent=False)
 
 
 

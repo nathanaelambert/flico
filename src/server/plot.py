@@ -7,6 +7,16 @@ from ..core.db import get_engine
 
 from textwrap import wrap
 
+AX_SIZE = 20
+TITLE_SIZE = 20
+TICK_SIZE = 12
+
+plt.rcParams.update({
+    "axes.labelsize": AX_SIZE,
+    "axes.titlesize": TITLE_SIZE,
+    "xtick.labelsize": TICK_SIZE,
+    "ytick.labelsize": TICK_SIZE,
+})
 
 def plot_top_owners_histogram():
     sql = """--sql
@@ -41,7 +51,7 @@ def plot_top_owners_histogram():
         width=0.8,
         linewidth=0,
     )
-
+    ax.set_yscale("log")
     ax.set_xlabel("Institution")
     ax.set_ylabel("Photo count")
     ax.set_title(
@@ -388,12 +398,12 @@ def plot_probability_histogram(
     plt.close()
 
 if __name__ == "__main__":
-    # plot_top_owners_histogram()
-    # plot_corrected_pred_date_histogram()
-    # plot_descr_pred_date_histogram()
-    # plot_descr_pred_date_histogram_69()
-    # plot_date_taken_histogram()
-    # plot_date_agreement_histogram()
+    plot_top_owners_histogram()
+    plot_corrected_pred_date_histogram()
+    plot_descr_pred_date_histogram()
+    plot_descr_pred_date_histogram_69()
+    plot_date_taken_histogram()
+    plot_date_agreement_histogram()
 
     plot_probability_histogram(
         "p_descr_date",
