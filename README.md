@@ -25,6 +25,8 @@ This dataset is acceccible as a Postgres database by contacting the author.
 The database contains 4 tables. Tables `institution`, `license`, and `photo` are raw data extracted from [Flickr Commons](https://www.flickr.com/commons) via the Flickr [API](https://www.flickr.com/services/api/). Table `machine_learning_photo` contains computed fields relative to date correction, as well as pictures and embeddings, and fields relative to geographic data correction and building identification. See the related projects: https://github.com/Amine-Zouzou/final_version_flickr, https://github.com/ghassanbaroudi/flickr-filtering-db-integration, and https://github.com/kimoal276/flickr-project.
 
 ## Database content
+
+### institution
 | Field               | Type   | Description                                     |
 | ------------------- | ------ | ----------------------------------------------- |
 | nsid                | TEXT   | Flickr institution identifier (primary key)     |
@@ -40,11 +42,15 @@ The database contains 4 tables. Tables `institution`, `license`, and `photo` are
 | most_recent_upload  | BIGINT | Timestamp of most recent image in database      |
 | least_recent_upload | BIGINT | Timestamp of oldest image in database           |
 
+### license
 | Field | Type | Description                      |
 | ----- | ---- | -------------------------------- |
 | id    | INT  | License identifier (primary key) |
 | name  | TEXT | License name                     |
 | url   | TEXT | License URL                      |
+
+### photo
+(id, owner_nsid) is primary key.
 
 | Field                  | Type             | Description                                                                |
 | ---------------------- | ---------------- | -------------------------------------------------------------------------- |
@@ -110,6 +116,8 @@ The database contains 4 tables. Tables `institution`, `license`, and `photo` are
 | height_o               | INT              | Original image height                                                      |
 | width_o                | INT              | Original image width                                                       |
 
+### machine_learning_photo
+(id, owner_nsid) is primary key and matches entries in `photo`.
 
 | Field                   | Type             | Description                                                |
 | ----------------------- | ---------------- | ---------------------------------------------------------- |
@@ -145,4 +153,3 @@ The database contains 4 tables. Tables `institution`, `license`, and `photo` are
 | human_pred_date         | INT              | Human-annotated year                                       |
 | corrected_year          | INT              | Final corrected year after aggregation                     |
 | is_slow_download        | BOOLEAN          | Whether image download was unusually slow                  |
-| is_test_set             | BOOLEAN          | Part of the 1850–2026 visual evaluation benchmark          |
