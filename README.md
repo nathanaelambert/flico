@@ -21,7 +21,7 @@ Flico (from Flickr Commons) is a large-scale dataset of 1,893,415 historical ima
 [Flico](flico_master_thesis_n_lambert.pdf) See the report.
 
 ## Access
-This dataset is acceccible as a Postgres database on [Zenodo](https://zenodo.org/records/20834988). Tables can also be downloaded from [Zenodo]().
+This dataset is acceccible as a Postgres database on [Zenodo](https://zenodo.org/records/20834988). Tables can also be downloaded as csv files from [Zenodo]().
 The database contains 4 tables. Tables `institution`, `license`, and `photo` are raw data extracted from [Flickr Commons](https://www.flickr.com/commons) via the Flickr [API](https://www.flickr.com/services/api/). Table `machine_learning_photo` contains computed fields relative to date correction, as well as pictures and embeddings, and fields relative to geographic data correction and building identification. See the related projects: https://github.com/Amine-Zouzou/final_version_flickr, https://github.com/ghassanbaroudi/flickr-filtering-db-integration, and https://github.com/kimoal276/flickr-project.
 
 ## Database content
